@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import { Settings, User, Building2, Key, Bell, Shield, CreditCard, Globe, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-export const metadata: Metadata = { title: "Settings" };
+import { AppearanceSettings } from "@/components/settings/appearance-settings";
 
 export default function SettingsPage() {
   return (
@@ -17,8 +17,9 @@ export default function SettingsPage() {
         <h1 className="text-base font-semibold text-foreground">Settings</h1>
       </div>
 
-      <Tabs defaultValue="profile">
-        <TabsList className="mb-6">
+      <Tabs defaultValue="appearance">
+        <TabsList className="mb-6 flex-wrap h-auto gap-y-1">
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="portal">Client Portal</TabsTrigger>
@@ -26,6 +27,10 @@ export default function SettingsPage() {
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="api">API & Security</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="appearance">
+          <AppearanceSettings />
+        </TabsContent>
 
         <TabsContent value="profile">
           <Card>
@@ -169,7 +174,6 @@ export default function SettingsPage() {
 
         <TabsContent value="portal">
           <div className="space-y-4">
-            {/* Branding */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
@@ -178,7 +182,6 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
-                {/* Logo upload */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Logo</label>
                   <div className="flex items-center gap-4">
@@ -191,15 +194,11 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <div className="space-y-1.5">
-                      <Button variant="outline" size="sm" className="text-xs gap-1.5">
-                        Upload Logo
-                      </Button>
+                      <Button variant="outline" size="sm" className="text-xs gap-1.5">Upload Logo</Button>
                       <p className="text-[11px] text-muted-foreground">PNG or SVG · max 1MB · shown in client portal header</p>
                     </div>
                   </div>
                 </div>
-
-                {/* Brand color */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Brand Color</label>
                   <div className="flex items-center gap-3">
@@ -220,7 +219,6 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Welcome message */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">

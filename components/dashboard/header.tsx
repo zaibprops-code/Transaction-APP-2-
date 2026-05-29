@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MOCK_NOTIFICATIONS } from "@/lib/mock-data";
 import { formatRelativeDate } from "@/lib/utils";
+import { ThemeToggleButton } from "@/components/ui/theme-switcher";
 
 export function Header({ title }: { title?: string }) {
   const router = useRouter();
@@ -90,6 +91,9 @@ export function Header({ title }: { title?: string }) {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Theme toggle */}
+        <ThemeToggleButton />
 
         {/* User menu */}
         <DropdownMenu>
