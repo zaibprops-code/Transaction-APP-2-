@@ -252,37 +252,42 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
     setDeal((prev) => ({ ...prev, stage }));
   }
 
-  async function handleDocUpload(file: File) {
-    if (!file) return;
+  async function handleDocUpload(files: FileList | File[]) {
+    const fileArr = Array.from(files);
+    if (fileArr.length === 0) return;
     setUploadingDoc(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("deal_id", deal.id);
-      const res = await fetch("/api/documents/upload", { method: "POST", body: formData });
-      if (!res.ok) {
-        const json = await res.json() as { error?: string };
-        throw new Error(json.error ?? "Upload failed");
+    let uploaded = 0;
+    for (const file of fileArr) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("deal_id", deal.id);
+        const res = await fetch("/api/documents/upload", { method: "POST", body: formData });
+        if (!res.ok) {
+          const json = await res.json() as { error?: string };
+          throw new Error(json.error ?? "Upload failed");
+        }
+        const json = await res.json() as { document?: import("@/types").Document; path?: string };
+        const newDoc: import("@/types").Document = json.document ?? {
+          id: `doc-${Date.now()}`,
+          deal_id: deal.id,
+          org_id: "org-1",
+          name: file.name,
+          file_path: json.path ?? "",
+          file_size: file.size,
+          mime_type: file.type,
+          category: "other",
+          uploaded_by: "",
+          created_at: new Date().toISOString(),
+        };
+        setDealDocs(prev => [newDoc, ...prev]);
+        uploaded++;
+      } catch (e) {
+        toast.error(`Failed to upload ${file.name}: ${e instanceof Error ? e.message : "Unknown error"}`);
       }
-      const newDoc: import("@/types").Document = {
-        id: `doc-${Date.now()}`,
-        deal_id: deal.id,
-        org_id: "org-1",
-        name: file.name,
-        file_path: "",
-        file_size: file.size,
-        mime_type: file.type,
-        category: "other",
-        uploaded_by: "",
-        created_at: new Date().toISOString(),
-      };
-      setDealDocs(prev => [newDoc, ...prev]);
-      toast.success("Document uploaded");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
-    } finally {
-      setUploadingDoc(false);
     }
+    if (uploaded > 0) toast.success(uploaded === 1 ? "Document uploaded" : `${uploaded} documents uploaded`);
+    setUploadingDoc(false);
   }
 
   async function handleAddTask(title: string, dueDate: string, priority: string) {
@@ -572,10 +577,10 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                   ref={docFileInputRef}
                   type="file"
                   accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                  multiple
                   className="hidden"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleDocUpload(file);
+                    if (e.target.files?.length) handleDocUpload(e.target.files);
                     e.target.value = "";
                   }}
                 />
@@ -597,29 +602,33 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                       <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, PNG, JPG supported</p>
                     </div>
                   )}
-                  {dealDocs.map(doc => (
-                    <div key={doc.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all cursor-pointer">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-10 bg-red-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-4 h-4 text-red-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-foreground truncate">{doc.name}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {getDocumentCategoryLabel(doc.category)} · {formatFileSize(doc.file_size)}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            {doc.is_signed && (
-                              <Badge variant="success" className="text-[10px]">Signed</Badge>
-                            )}
-                            {doc.ai_extracted && (
-                              <Badge variant="purple" className="text-[10px]">AI Analyzed</Badge>
-                            )}
+                  {dealDocs.map(doc => {
+                    const mime = doc.mime_type ?? "";
+                    const isImage = mime.startsWith("image/");
+                    const isPdf = mime === "application/pdf";
+                    const isDoc = mime.includes("word") || mime.includes("document");
+                    const iconBg = isImage ? "bg-emerald-500/10" : isPdf ? "bg-red-500/10" : isDoc ? "bg-blue-500/10" : "bg-muted/20";
+                    const iconColor = isImage ? "text-emerald-400" : isPdf ? "text-red-400" : isDoc ? "text-blue-400" : "text-muted-foreground";
+                    return (
+                      <div key={doc.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all cursor-pointer group">
+                        <div className="flex items-start gap-3">
+                          <div className={cn("w-9 h-10 rounded-lg flex items-center justify-center flex-shrink-0", iconBg)}>
+                            <FileText className={cn("w-4 h-4", iconColor)} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate">{doc.name}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              {getDocumentCategoryLabel(doc.category)} · {formatFileSize(doc.file_size)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {doc.is_signed && <Badge variant="success" className="text-[10px]">Signed</Badge>}
+                              {doc.ai_extracted && <Badge variant="purple" className="text-[10px]">AI Analyzed</Badge>}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </TabsContent>
 

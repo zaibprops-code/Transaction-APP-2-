@@ -3,6 +3,7 @@ import { MOCK_DOCUMENTS } from "@/lib/mock-data";
 import { isDemo } from "@/lib/utils";
 import { requireAuth, ok, err } from "@/lib/api-helpers";
 import { getDocuments, insertDocumentRecord } from "@/lib/services/documents";
+import { demoStore } from "@/lib/demo-store";
 import type { Document } from "@/types";
 
 export async function GET(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get("category") ?? undefined;
 
   if (isDemo()) {
-    let docs = [...MOCK_DOCUMENTS];
+    let docs = [...MOCK_DOCUMENTS, ...demoStore.getDocs()];
     if (dealId) docs = docs.filter((d) => d.deal_id === dealId);
     if (category) docs = docs.filter((d) => d.category === category);
     return ok({ documents: docs, total: docs.length });
