@@ -130,7 +130,7 @@ export function DealsBoard() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 p-4 border-b border-border flex-wrap">
+      <div className="flex items-center gap-3 p-4 border-b border-border flex-wrap flex-shrink-0">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-muted-foreground" />
           <h1 className="text-base font-semibold text-foreground">Deal Pipeline</h1>
@@ -177,7 +177,7 @@ export function DealsBoard() {
       </div>
 
       {/* AI Copilot Bar */}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-2 flex-shrink-0">
         <CopilotBar
           message="AI: 3 deals need attention — 923 Maple Court at critical risk (45/100)"
           prompt="Which deals are at risk and what should I prioritize?"

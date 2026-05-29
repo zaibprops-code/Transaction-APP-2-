@@ -155,7 +155,7 @@ export function WeekView() {
       </div>
 
       {/* Scrollable time grid */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="flex" style={{ height: `${HOURS.length * 60}px` }}>
           {/* Time labels */}
           <div className="w-14 flex-shrink-0 relative">

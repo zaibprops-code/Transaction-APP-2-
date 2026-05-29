@@ -54,7 +54,7 @@ export function DocumentsContent() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 p-4 border-b border-border flex-wrap">
+      <div className="flex items-center gap-3 p-4 border-b border-border flex-wrap flex-shrink-0">
         <div className="flex items-center gap-2">
           <FolderOpen className="w-4 h-4 text-muted-foreground" />
           <h1 className="text-base font-semibold text-foreground">Documents</h1>
@@ -84,7 +84,7 @@ export function DocumentsContent() {
       </div>
 
       {/* Categories */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border overflow-x-auto flex-shrink-0">
         {CATEGORIES.map(cat => (
           <button
             key={cat}
@@ -102,7 +102,7 @@ export function DocumentsContent() {
       </div>
 
       {/* AI Copilot Bar */}
-      <div className="px-4 py-2 border-b border-border/50">
+      <div className="px-4 py-2 border-b border-border/50 flex-shrink-0">
         <CopilotBar
           message="AI: 2 documents need review — Missing inspection report for 923 Maple Court"
           prompt="Which deals have missing documents and what's needed?"
@@ -120,7 +120,7 @@ export function DocumentsContent() {
       </div>
 
       {/* Documents */}
-      <div className={cn("flex-1 overflow-y-auto p-4", view === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 content-start" : "space-y-2")}>
+      <div className={cn("flex-1 min-h-0 overflow-y-auto p-4", view === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 content-start" : "space-y-2")}>
         {view === "grid" ? (
           filtered.map(doc => (
             <div key={doc.id} className="bg-card border border-border rounded-xl p-4 hover:border-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer group">

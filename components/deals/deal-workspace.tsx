@@ -67,7 +67,7 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-border px-4 py-4 bg-surface/50">
+      <div className="border-b border-border px-4 py-4 bg-surface/50 flex-shrink-0">
         <div className="flex items-start gap-3 mb-3">
           <Link
             href="/deals"
@@ -113,10 +113,9 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="border-b border-border px-4 pt-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+      {/* Tabs — flex-1 + min-h-0 lets the scroll container actually shrink */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="border-b border-border px-4 pt-1 flex-shrink-0 bg-surface/30">
             <TabsList className="bg-transparent border-none p-0 gap-0 h-auto">
               {[
                 { id: "overview", label: "Overview", icon: null },
@@ -148,8 +147,10 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                 );
               })}
             </TabsList>
+        </div>
 
-            <div className="overflow-y-auto flex-1 p-4">
+        {/* Scrollable content — flex-1 now works because parent <Tabs> is flex-col */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">
               {/* Overview Tab */}
               <TabsContent value="overview" className="mt-0">
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -491,10 +492,8 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                   </div>
                 </div>
               </TabsContent>
-            </div>
-          </Tabs>
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 }
