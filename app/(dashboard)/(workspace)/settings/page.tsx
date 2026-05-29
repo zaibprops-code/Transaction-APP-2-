@@ -1,6 +1,7 @@
 "use client";
 
-import { Settings, User, Building2, Key, Bell, Shield, CreditCard, Globe, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Settings, User, Building2, Key, Bell, Shield, CreditCard, Globe, ExternalLink, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,74 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
+import { toast } from "sonner";
+
+function ProfileTab() {
+  const [fullName, setFullName] = useState("Sarah Mitchell");
+  const [title, setTitle] = useState("Lead Transaction Coordinator");
+  const [email, setEmail] = useState("sarah@closetrack.co");
+  const [phone, setPhone] = useState("(555) 234-5678");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch("/api/profiles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ full_name: fullName, title, phone }),
+      });
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Failed to save profile");
+      }
+      toast.success("Profile saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <User className="w-4 h-4 text-indigo-400" />
+          Profile Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Full Name</label>
+              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Title</label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Email</label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" disabled className="opacity-60" />
+            <p className="text-[10px] text-muted-foreground">Email cannot be changed here. Contact support.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">Phone</label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" />
+          </div>
+          <Button type="submit" disabled={saving}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            {saving ? "Saving..." : "Save changes"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function SettingsPage() {
   return (
@@ -33,35 +102,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <User className="w-4 h-4 text-indigo-400" />
-                Profile Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Full Name</label>
-                  <Input defaultValue="Sarah Mitchell" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Title</label>
-                  <Input defaultValue="Lead Transaction Coordinator" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Email</label>
-                <Input defaultValue="sarah@closetrack.co" type="email" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Phone</label>
-                <Input defaultValue="(555) 234-5678" type="tel" />
-              </div>
-              <Button>Save changes</Button>
-            </CardContent>
-          </Card>
+          <ProfileTab />
         </TabsContent>
 
         <TabsContent value="organization">

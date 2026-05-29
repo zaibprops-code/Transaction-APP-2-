@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -8,30 +8,221 @@ import {
   Plus,
   Sparkles,
   Search,
-  Filter,
   Calendar,
   ArrowRight,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   formatDate,
   isOverdue,
   generateInitials,
-  getPriorityColor,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CopilotBar } from "@/components/ai/copilot-bar";
-import type { Task } from "@/types";
+import { toast } from "sonner";
+import type { Task, TaskPriority } from "@/types";
 
 const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
-function TaskRow({ task }: { task: Task }) {
+interface AddTaskForm {
+  title: string;
+  due_date: string;
+  priority: TaskPriority;
+  description: string;
+}
+
+const DEFAULT_TASK_FORM: AddTaskForm = {
+  title: "",
+  due_date: "",
+  priority: "medium",
+  description: "",
+};
+
+function AddTaskDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [form, setForm] = useState<AddTaskForm>(DEFAULT_TASK_FORM);
+  const [submitting, setSubmitting] = useState(false);
+
+  function set(field: keyof AddTaskForm, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.title.trim()) {
+      toast.error("Task title is required");
+      return;
+    }
+    if (!form.due_date) {
+      toast.error("Due date is required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          due_date: form.due_date,
+          priority: form.priority,
+          description: form.description || undefined,
+          status: "pending",
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Failed to create task");
+      }
+      toast.success("Task created");
+      setForm(DEFAULT_TASK_FORM);
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create task");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Add Task</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Title <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={(e) => set("title", e.target.value)}
+              placeholder="e.g. Order title search"
+              required
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Due Date <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="date"
+                value={form.due_date}
+                onChange={(e) => set("due_date", e.target.value)}
+                required
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Priority</label>
+              <select
+                value={form.priority}
+                onChange={(e) => set("priority", e.target.value)}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Description (optional)</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Additional details..."
+              rows={2}
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              {submitting ? "Creating..." : "Add Task"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TaskRow({
+  task,
+  onDelete,
+  onStatusChange,
+}: {
+  task: Task;
+  onDelete: (id: string) => void;
+  onStatusChange: (id: string, done: boolean) => void;
+}) {
   const [done, setDone] = useState(task.status === "completed");
+  const [deleting, setDeleting] = useState(false);
   const overdue = isOverdue(task.due_date) && !done;
+  const previousDone = useRef(task.status === "completed");
+
+  async function handleCheck(checked: boolean) {
+    const previous = done;
+    setDone(checked);
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: checked ? "completed" : "pending" }),
+      });
+      if (!res.ok) throw new Error("Failed to update task");
+      onStatusChange(task.id, checked);
+      previousDone.current = checked;
+    } catch {
+      setDone(previous);
+      toast.error("Failed to update task");
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete task");
+      toast.success("Task deleted");
+      onDelete(task.id);
+    } catch {
+      setDeleting(false);
+      toast.error("Failed to delete task");
+    }
+  }
 
   return (
     <motion.div
@@ -39,14 +230,14 @@ function TaskRow({ task }: { task: Task }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn(
-        "flex items-start gap-3 p-3.5 rounded-xl border transition-all",
+        "flex items-start gap-3 p-3.5 rounded-xl border transition-all group",
         done ? "opacity-50 bg-surface/30 border-border/50" : "bg-card border-border hover:border-indigo-500/20"
       )}
     >
       <input
         type="checkbox"
         checked={done}
-        onChange={e => setDone(e.target.checked)}
+        onChange={e => handleCheck(e.target.checked)}
         className="mt-0.5 w-4 h-4 rounded border-border bg-surface-2 flex-shrink-0 cursor-pointer accent-indigo-500"
       />
       <div className="flex-1 min-w-0">
@@ -89,6 +280,14 @@ function TaskRow({ task }: { task: Task }) {
           <AvatarFallback className="text-[9px]">{generateInitials(task.assigned_to_name)}</AvatarFallback>
         </Avatar>
       )}
+      <button
+        onClick={handleDelete}
+        disabled={deleting}
+        className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all"
+        title="Delete task"
+      >
+        {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+      </button>
     </motion.div>
   );
 }
@@ -97,6 +296,7 @@ export function TasksContent() {
   const [search, setSearch] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddTask, setShowAddTask] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -113,6 +313,18 @@ export function TasksContent() {
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
+
+  function handleDelete(id: string) {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  function handleStatusChange(id: string, done: boolean) {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, status: done ? "completed" : "pending" } : t
+      )
+    );
+  }
 
   const allTasks = tasks.filter(
     t => !search || t.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -159,7 +371,7 @@ export function TasksContent() {
             <Sparkles className="w-3.5 h-3.5 text-violet-400" />
             AI Generate
           </Button>
-          <Button size="sm" className="h-8 text-xs gap-1.5">
+          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowAddTask(true)}>
             <Plus className="w-3.5 h-3.5" />
             Add Task
           </Button>
@@ -185,7 +397,7 @@ export function TasksContent() {
             <CheckSquare className="w-10 h-10 mx-auto mb-4 text-muted-foreground/30" />
             <p className="text-base font-semibold text-foreground mb-1">No tasks yet</p>
             <p className="text-sm text-muted-foreground mb-4">Add tasks to track what needs to get done across your deals.</p>
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5" onClick={() => setShowAddTask(true)}>
               <Plus className="w-3.5 h-3.5" />
               Add your first task
             </Button>
@@ -203,7 +415,12 @@ export function TasksContent() {
                   </div>
                   <div className="space-y-2">
                     {section.tasks.map(task => (
-                      <TaskRow key={task.id} task={task} />
+                      <TaskRow
+                        key={task.id}
+                        task={task}
+                        onDelete={handleDelete}
+                        onStatusChange={handleStatusChange}
+                      />
                     ))}
                   </div>
                 </div>
@@ -218,7 +435,12 @@ export function TasksContent() {
           </>
         )}
       </div>
+
+      <AddTaskDialog
+        open={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onCreated={fetchTasks}
+      />
     </div>
   );
 }
-

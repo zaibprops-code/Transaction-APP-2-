@@ -19,6 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useRealtimeDeals } from "@/lib/hooks/useRealtimeDeals";
 import {
   formatCurrency,
@@ -31,7 +38,8 @@ import {
 import { cn } from "@/lib/utils";
 import { CopilotBar } from "@/components/ai/copilot-bar";
 import { PackageOpen, Loader2 } from "lucide-react";
-import type { Deal } from "@/types";
+import { toast } from "sonner";
+import type { Deal, DealStage, PropertyType } from "@/types";
 
 const PIPELINE_STAGES = [
   { id: "new_lead", label: "New Lead", color: "blue" },
@@ -40,6 +48,257 @@ const PIPELINE_STAGES = [
   { id: "pending_docs", label: "Pending Docs", color: "amber" },
   { id: "clear_to_close", label: "Clear to Close", color: "emerald" },
 ] as const;
+
+interface CreateDealForm {
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  buyer_name: string;
+  buyer_email: string;
+  seller_name: string;
+  purchase_price: string;
+  closing_date: string;
+  property_type: PropertyType;
+  stage: DealStage;
+}
+
+const DEFAULT_FORM: CreateDealForm = {
+  address: "",
+  city: "",
+  state: "",
+  zip: "",
+  buyer_name: "",
+  buyer_email: "",
+  seller_name: "",
+  purchase_price: "",
+  closing_date: "",
+  property_type: "single_family",
+  stage: "new_lead",
+};
+
+function CreateDealDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [form, setForm] = useState<CreateDealForm>(DEFAULT_FORM);
+  const [submitting, setSubmitting] = useState(false);
+
+  function set(field: keyof CreateDealForm, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.address.trim() || !form.buyer_name.trim()) {
+      toast.error("Address and buyer name are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/deals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          buyer_name: form.buyer_name,
+          buyer_email: form.buyer_email || undefined,
+          seller_name: form.seller_name,
+          purchase_price: form.purchase_price ? Number(form.purchase_price) : 0,
+          closing_date: form.closing_date || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+          property_type: form.property_type,
+          stage: form.stage,
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Failed to create deal");
+      }
+      toast.success("Deal created successfully");
+      setForm(DEFAULT_FORM);
+      onCreated();
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create deal");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-base">Create New Deal</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          {/* Address */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Property Address <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.address}
+              onChange={(e) => set("address", e.target.value)}
+              placeholder="123 Main St"
+              required
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          {/* City / State / Zip */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">City</label>
+              <input
+                type="text"
+                value={form.city}
+                onChange={(e) => set("city", e.target.value)}
+                placeholder="Austin"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">State</label>
+              <input
+                type="text"
+                value={form.state}
+                onChange={(e) => set("state", e.target.value)}
+                placeholder="TX"
+                maxLength={2}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">ZIP</label>
+              <input
+                type="text"
+                value={form.zip}
+                onChange={(e) => set("zip", e.target.value)}
+                placeholder="78701"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          {/* Buyer */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                Buyer Name <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.buyer_name}
+                onChange={(e) => set("buyer_name", e.target.value)}
+                placeholder="Jane Doe"
+                required
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Buyer Email</label>
+              <input
+                type="email"
+                value={form.buyer_email}
+                onChange={(e) => set("buyer_email", e.target.value)}
+                placeholder="jane@email.com"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          {/* Seller */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Seller Name</label>
+            <input
+              type="text"
+              value={form.seller_name}
+              onChange={(e) => set("seller_name", e.target.value)}
+              placeholder="John Smith"
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          {/* Price + Closing */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Purchase Price</label>
+              <input
+                type="number"
+                value={form.purchase_price}
+                onChange={(e) => set("purchase_price", e.target.value)}
+                placeholder="450000"
+                min={0}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Closing Date</label>
+              <input
+                type="date"
+                value={form.closing_date}
+                onChange={(e) => set("closing_date", e.target.value)}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          {/* Property Type + Stage */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Property Type</label>
+              <select
+                value={form.property_type}
+                onChange={(e) => set("property_type", e.target.value)}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="single_family">Single Family</option>
+                <option value="condo">Condo</option>
+                <option value="townhouse">Townhouse</option>
+                <option value="commercial">Commercial</option>
+                <option value="land">Land</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Pipeline Stage</label>
+              <select
+                value={form.stage}
+                onChange={(e) => set("stage", e.target.value)}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="new_lead">New Lead</option>
+                <option value="under_contract">Under Contract</option>
+                <option value="due_diligence">Due Diligence</option>
+                <option value="pending_docs">Pending Docs</option>
+                <option value="clear_to_close">Clear to Close</option>
+              </select>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              {submitting ? "Creating..." : "Create Deal"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function DealCard({ deal }: { deal: Deal }) {
   const healthColor = getHealthColor(deal.health_score);
@@ -120,7 +379,8 @@ function DealCard({ deal }: { deal: Deal }) {
 export function DealsBoard() {
   const [view, setView] = useState<"board" | "list">("board");
   const [search, setSearch] = useState("");
-  const { deals: activeDeals, loading } = useRealtimeDeals({ status: "active" });
+  const [showCreateDeal, setShowCreateDeal] = useState(false);
+  const { deals: activeDeals, loading, refetch } = useRealtimeDeals({ status: "active" });
 
   const filtered = activeDeals.filter(d =>
     !search ||
@@ -170,7 +430,7 @@ export function DealsBoard() {
               <List className="w-3.5 h-3.5" />
             </button>
           </div>
-          <Button size="sm" className="h-8 text-xs gap-1.5">
+          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setShowCreateDeal(true)}>
             <Plus className="w-3.5 h-3.5" />
             New Deal
           </Button>
@@ -200,7 +460,7 @@ export function DealsBoard() {
           <p className="text-sm text-muted-foreground mb-6 max-w-xs">
             Create your first deal to start tracking transactions in your pipeline.
           </p>
-          <Button size="sm" className="gap-1.5">
+          <Button size="sm" className="gap-1.5" onClick={() => setShowCreateDeal(true)}>
             <Plus className="w-3.5 h-3.5" />
             Create your first deal
           </Button>
@@ -304,6 +564,12 @@ export function DealsBoard() {
           </div>
         </div>
       )}
+
+      <CreateDealDialog
+        open={showCreateDeal}
+        onClose={() => setShowCreateDeal(false)}
+        onCreated={refetch}
+      />
     </div>
   );
 }

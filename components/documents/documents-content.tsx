@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   FolderOpen,
   Search,
@@ -23,6 +22,7 @@ import {
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CopilotBar } from "@/components/ai/copilot-bar";
+import { toast } from "sonner";
 
 const CATEGORIES = [
   "All",
@@ -40,6 +40,9 @@ export function DocumentsContent() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -57,6 +60,69 @@ export function DocumentsContent() {
     fetchDocuments();
   }, [fetchDocuments]);
 
+  async function handleFileUpload(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/documents/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Upload failed");
+      }
+
+      // Create a local document record for immediate display
+      const newDoc: Document = {
+        id: `doc-${Date.now()}`,
+        deal_id: "",
+        org_id: "org-1",
+        name: file.name,
+        file_path: "",
+        file_size: file.size,
+        mime_type: file.type,
+        category: "other",
+        uploaded_by: "",
+        created_at: new Date().toISOString(),
+      };
+      setDocuments((prev) => [newDoc, ...prev]);
+      toast.success("Document uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+    // Reset so same file can be re-selected
+    e.target.value = "";
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  }
+
   const filtered = documents.filter(doc => {
     const matchSearch =
       !search ||
@@ -70,6 +136,15 @@ export function DocumentsContent() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+        className="hidden"
+        onChange={handleInputChange}
+      />
+
       {/* Toolbar */}
       <div className="flex items-center gap-3 p-4 border-b border-border flex-wrap flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -93,9 +168,14 @@ export function DocumentsContent() {
               <List className="w-3.5 h-3.5" />
             </button>
           </div>
-          <Button size="sm" className="h-8 text-xs gap-1.5">
-            <Upload className="w-3.5 h-3.5" />
-            Upload
+          <Button
+            size="sm"
+            className="h-8 text-xs gap-1.5"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            {uploading ? "Uploading..." : "Upload"}
           </Button>
         </div>
       </div>
@@ -128,10 +208,25 @@ export function DocumentsContent() {
       </div>
 
       {/* Upload Zone */}
-      <div className="mx-4 mt-4 border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all cursor-pointer">
-        <Upload className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+      <div
+        className={cn(
+          "mx-4 mt-4 border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer",
+          isDragOver
+            ? "border-indigo-500/60 bg-indigo-500/10"
+            : "border-border hover:border-indigo-500/40 hover:bg-indigo-500/5"
+        )}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {uploading ? (
+          <Loader2 className="w-7 h-7 text-indigo-400 mx-auto mb-2 animate-spin" />
+        ) : (
+          <Upload className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+        )}
         <p className="text-sm text-muted-foreground">
-          Drop files here or <span className="text-indigo-400">browse</span>
+          {uploading ? "Uploading..." : <>Drop files here or <span className="text-indigo-400">browse</span></>}
         </p>
         <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, PNG up to 50MB</p>
       </div>
@@ -148,7 +243,7 @@ export function DocumentsContent() {
           <p className="text-sm text-muted-foreground mb-6 max-w-xs">
             Upload contracts, disclosures, and other files to keep your deals organized.
           </p>
-          <Button size="sm" className="gap-1.5">
+          <Button size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()}>
             <Upload className="w-3.5 h-3.5" />
             Upload your first document
           </Button>

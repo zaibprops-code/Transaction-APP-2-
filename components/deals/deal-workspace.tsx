@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -25,6 +25,8 @@ import {
   ExternalLink,
   ToggleLeft,
   ToggleRight,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,16 +47,176 @@ import {
   getHealthColor,
   getStageLabel,
   getStageColor,
-  getPriorityColor,
   isOverdue,
   generateInitials,
   formatFileSize,
   getDocumentCategoryLabel,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import type { Deal } from "@/types";
+import { toast } from "sonner";
+import type { Deal, DealStage } from "@/types";
 
-export function DealWorkspace({ deal }: { deal: Deal }) {
+const STAGE_STEPS: { id: DealStage; label: string }[] = [
+  { id: "new_lead", label: "New Lead" },
+  { id: "under_contract", label: "Under Contract" },
+  { id: "due_diligence", label: "Due Diligence" },
+  { id: "pending_docs", label: "Pending Docs" },
+  { id: "clear_to_close", label: "Clear to Close" },
+];
+
+const STAGE_ORDER: DealStage[] = [
+  "new_lead",
+  "under_contract",
+  "due_diligence",
+  "pending_docs",
+  "clear_to_close",
+  "closed",
+  "cancelled",
+];
+
+function StageProgress({
+  currentStage,
+  dealId,
+  onStageChange,
+}: {
+  currentStage: DealStage;
+  dealId: string;
+  onStageChange: (stage: DealStage) => void;
+}) {
+  const [updatingStage, setUpdatingStage] = useState<DealStage | null>(null);
+  const currentIndex = STAGE_ORDER.indexOf(currentStage);
+
+  async function handleStageClick(stage: DealStage) {
+    if (stage === currentStage) return;
+    setUpdatingStage(stage);
+    try {
+      const res = await fetch(`/api/deals/${dealId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage }),
+      });
+      if (!res.ok) throw new Error("Failed to update stage");
+      onStageChange(stage);
+      toast.success(`Stage updated to ${getStageLabel(stage)}`);
+    } catch {
+      toast.error("Failed to update stage");
+    } finally {
+      setUpdatingStage(null);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-0 mt-3 overflow-x-auto">
+      {STAGE_STEPS.map((step, idx) => {
+        const stepIndex = STAGE_ORDER.indexOf(step.id);
+        const isActive = step.id === currentStage;
+        const isPast = stepIndex < currentIndex;
+        const isUpdating = updatingStage === step.id;
+
+        return (
+          <button
+            key={step.id}
+            onClick={() => handleStageClick(step.id)}
+            disabled={!!updatingStage}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all rounded-lg flex-shrink-0",
+              isActive
+                ? "bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 cursor-default"
+                : isPast
+                ? "text-emerald-400 hover:bg-emerald-400/10 cursor-pointer"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface-2 cursor-pointer",
+              updatingStage && !isUpdating && "opacity-40"
+            )}
+          >
+            {isUpdating ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : isPast ? (
+              <Check className="w-3 h-3" />
+            ) : isActive ? (
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+            ) : (
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+            )}
+            {step.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function NotesEditor({ dealId, initialNotes }: { dealId: string; initialNotes?: string }) {
+  const [notes, setNotes] = useState(initialNotes ?? "");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNotes = useCallback(
+    async (value: string) => {
+      setSaveStatus("saving");
+      try {
+        const res = await fetch(`/api/deals/${dealId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes: value }),
+        });
+        if (!res.ok) throw new Error("Failed to save notes");
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch {
+        setSaveStatus("idle");
+        toast.error("Failed to save notes");
+      }
+    },
+    [dealId]
+  );
+
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const value = e.target.value;
+    setNotes(value);
+    setSaveStatus("idle");
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => saveNotes(value), 500);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+          <StickyNote className="w-3.5 h-3.5" />
+          Notes
+        </label>
+        {saveStatus === "saving" && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            Saving...
+          </span>
+        )}
+        {saveStatus === "saved" && (
+          <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+            <Check className="w-2.5 h-2.5" />
+            Saved
+          </span>
+        )}
+      </div>
+      <textarea
+        value={notes}
+        onChange={handleChange}
+        placeholder="Add notes about this deal..."
+        rows={4}
+        className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+      />
+    </div>
+  );
+}
+
+export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
+  const [deal, setDeal] = useState<Deal>(initialDeal);
   const [activeTab, setActiveTab] = useState("overview");
   const [portalEnabled, setPortalEnabled] = useState(true);
   const dealTasks = MOCK_TASKS.filter(t => t.deal_id === deal.id);
@@ -63,6 +225,10 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
   const dealActivities = MOCK_ACTIVITIES.filter(a => a.deal_id === deal.id);
   const daysToClose = getDaysToClose(deal.closing_date);
   const healthColor = getHealthColor(deal.health_score);
+
+  function handleStageChange(stage: DealStage) {
+    setDeal((prev) => ({ ...prev, stage }));
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -105,6 +271,12 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                 {daysToClose > 0 ? ` (${daysToClose}d)` : " (Today!)"}
               </span>
             </div>
+            {/* Stage stepper */}
+            <StageProgress
+              currentStage={deal.stage}
+              dealId={deal.id}
+              onStageChange={handleStageChange}
+            />
           </div>
           <Button size="sm" variant="outline" className="flex-shrink-0">
             <Sparkles className="w-3.5 h-3.5 text-violet-400" />
@@ -247,6 +419,16 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                           <p className="text-[10px] text-muted-foreground mt-0.5">{factor.description}</p>
                         </div>
                       ))}
+                      {deal.health_factors.length === 0 && (
+                        <p className="text-xs text-muted-foreground">No health factors available</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Notes card spans full width on lg */}
+                  <Card className="md:col-span-2 lg:col-span-3">
+                    <CardContent className="pt-4">
+                      <NotesEditor dealId={deal.id} initialNotes={(deal as Deal & { notes?: string }).notes} />
                     </CardContent>
                   </Card>
                 </div>
@@ -419,7 +601,7 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
               <TabsContent value="signatures" className="mt-0">
                 <div className="text-center py-16 text-muted-foreground">
                   <PenLine className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Signature requests for this deal</p>
+                  <p className="text-sm">No signatures yet</p>
                   <Button className="mt-4" size="sm">
                     <Plus className="w-3.5 h-3.5" />
                     Request Signature

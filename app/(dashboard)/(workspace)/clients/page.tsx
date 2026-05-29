@@ -2,14 +2,22 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Users, Search, Plus, Mail, Phone, ExternalLink, Settings2, Clock, Loader2 } from "lucide-react";
+import { Users, Search, Plus, Mail, Phone, ExternalLink, Settings2, Clock, Loader2, Send } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { generateInitials, formatRelativeDate } from "@/lib/utils";
 import { PortalStatusBadge } from "@/components/portal/portal-status-badge";
+import { toast } from "sonner";
 import type { PortalStatus } from "@/components/portal/portal-status-badge";
 
 interface Client {
@@ -25,15 +33,136 @@ interface Client {
   created_at: string;
 }
 
+interface AddClientForm {
+  full_name: string;
+  email: string;
+  phone: string;
+}
+
+const DEFAULT_CLIENT_FORM: AddClientForm = {
+  full_name: "",
+  email: "",
+  phone: "",
+};
+
 function lastActivityLabel(lastVisit: string | null): string {
   if (!lastVisit) return "Never visited";
   return `Last active ${formatRelativeDate(lastVisit)}`;
+}
+
+function AddClientDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (client: Client) => void;
+}) {
+  const [form, setForm] = useState<AddClientForm>(DEFAULT_CLIENT_FORM);
+  const [submitting, setSubmitting] = useState(false);
+
+  function set(field: keyof AddClientForm, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.full_name.trim() || !form.email.trim()) {
+      toast.error("Name and email are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: form.full_name,
+          email: form.email,
+          phone: form.phone || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Failed to add client");
+      }
+      const json = await res.json() as { client: Client };
+      toast.success("Client added");
+      setForm(DEFAULT_CLIENT_FORM);
+      onCreated(json.client);
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add client");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Add Client</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Full Name <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.full_name}
+              onChange={(e) => set("full_name", e.target.value)}
+              placeholder="Jane Smith"
+              required
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              Email <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              placeholder="jane@email.com"
+              required
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Phone</label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="(555) 123-4567"
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              {submitting ? "Adding..." : "Add Client"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function ClientsPage() {
   const [search, setSearch] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState<string | null>(null);
 
   const fetchClients = useCallback(async () => {
     try {
@@ -50,6 +179,50 @@ export default function ClientsPage() {
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  function handleClientCreated(client: Client) {
+    setClients((prev) => [client, ...prev]);
+  }
+
+  async function handleSendInvite(client: Client) {
+    if (!client.portal_token) {
+      toast.error("No portal token found for this client");
+      return;
+    }
+    setSendingInvite(client.id);
+    // Optimistically update portal status
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === client.id ? { ...c, portal_status: "invite_sent" } : c
+      )
+    );
+    try {
+      const res = await fetch("/api/email/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: client.id,
+          client_email: client.email,
+          client_name: client.full_name,
+          portal_token: client.portal_token,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to send invite");
+      }
+      toast.success("Invite sent to " + client.email);
+    } catch {
+      // Revert
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === client.id ? { ...c, portal_status: client.portal_status } : c
+        )
+      );
+      toast.error("Failed to send invite");
+    } finally {
+      setSendingInvite(null);
+    }
+  }
 
   const filtered = search
     ? clients.filter(
@@ -75,7 +248,7 @@ export default function ClientsPage() {
             leftIcon={<Search className="w-3.5 h-3.5" />}
             className="w-48 h-8 text-xs"
           />
-          <Button size="sm" className="gap-1.5 h-8 text-xs">
+          <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => setShowAddClient(true)}>
             <Plus className="w-3.5 h-3.5" />
             Add Client
           </Button>
@@ -93,7 +266,7 @@ export default function ClientsPage() {
           <p className="text-sm text-muted-foreground mb-6 max-w-xs">
             Add clients to manage their portal access and track their engagement.
           </p>
-          <Button size="sm" className="gap-1.5">
+          <Button size="sm" className="gap-1.5" onClick={() => setShowAddClient(true)}>
             <Plus className="w-3.5 h-3.5" />
             Add your first client
           </Button>
@@ -139,7 +312,24 @@ export default function ClientsPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border">
+                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-border flex-wrap">
+                  {/* Send Invite button for pending/not yet invited */}
+                  {(client.portal_status === "invite_pending" || client.portal_status === "disabled") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 border-indigo-500/20"
+                      disabled={sendingInvite === client.id}
+                      onClick={() => handleSendInvite(client)}
+                    >
+                      {sendingInvite === client.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Send className="w-3 h-3" />
+                      )}
+                      Send Invite
+                    </Button>
+                  )}
                   {client.portal_token && (
                     <Link href={`/portal/${client.portal_token}`} target="_blank" className="flex-1">
                       <Button
@@ -174,6 +364,12 @@ export default function ClientsPage() {
           )}
         </div>
       )}
+
+      <AddClientDialog
+        open={showAddClient}
+        onClose={() => setShowAddClient(false)}
+        onCreated={handleClientCreated}
+      />
     </div>
   );
 }
