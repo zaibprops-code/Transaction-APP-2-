@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MOCK_TASKS, MOCK_DOCUMENTS, MOCK_AI_INSIGHTS, MOCK_ACTIVITIES } from "@/lib/mock-data";
+import { PropertyMediaPanel } from "@/components/media/property-media-panel";
 import {
   formatCurrency,
   formatDate,
@@ -110,6 +111,7 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
               {[
                 { id: "overview", label: "Overview", icon: null },
                 { id: "tasks", label: `Tasks (${dealTasks.length})`, icon: null },
+                { id: "media", label: "Media", icon: null },
                 { id: "documents", label: `Docs (${dealDocs.length})`, icon: null },
                 { id: "communications", label: "Messages", icon: null },
                 { id: "signatures", label: "Signatures", icon: null },
@@ -296,6 +298,11 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                     </div>
                   )}
                 </div>
+              </TabsContent>
+
+              {/* Media Tab */}
+              <TabsContent value="media" className="mt-0 h-full">
+                <PropertyMediaPanel dealId={deal.id} dealAddress={deal.address} />
               </TabsContent>
 
               {/* Documents Tab */}
