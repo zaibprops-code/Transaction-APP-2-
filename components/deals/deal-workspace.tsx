@@ -51,6 +51,7 @@ import {
   isOverdue,
   generateInitials,
   formatFileSize,
+  computeHealthFactors,
   getDocumentCategoryLabel,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -226,7 +227,12 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
   const dealInsights = MOCK_AI_INSIGHTS.filter(i => i.deal_id === deal.id);
   const dealActivities = MOCK_ACTIVITIES.filter(a => a.deal_id === deal.id);
   const daysToClose = getDaysToClose(deal.closing_date);
-  const healthColor = getHealthColor(deal.health_score);
+  const computed = deal.health_factors.length === 0
+    ? computeHealthFactors({ closing_date: deal.closing_date, task_count: deal.task_count, doc_count: deal.doc_count, stage: deal.stage })
+    : null;
+  const displayHealthFactors = deal.health_factors.length > 0 ? deal.health_factors : (computed?.factors ?? []);
+  const displayHealthScore = deal.health_factors.length > 0 ? deal.health_score : (computed?.score ?? deal.health_score);
+  const healthColor = getHealthColor(displayHealthScore);
 
   useEffect(() => {
     fetch(`/api/tasks?deal_id=${deal.id}`)
@@ -286,7 +292,7 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                 healthColor === "red" && "text-red-400 bg-red-400/10 border-red-400/20"
               )}>
                 <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                Health: {deal.health_score}/100
+                Health: {displayHealthScore}/100
               </div>
             </div>
             <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
@@ -424,11 +430,11 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                             healthColor === "amber" ? "bg-amber-400" : "bg-red-400"
                           )} />
                         </div>
-                        Deal Health: {deal.health_score}/100
+                        Deal Health: {displayHealthScore}/100
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {deal.health_factors.map(factor => (
+                      {displayHealthFactors.map(factor => (
                         <div key={factor.label}>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-muted-foreground">{factor.label}</span>
@@ -447,9 +453,6 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                           <p className="text-[10px] text-muted-foreground mt-0.5">{factor.description}</p>
                         </div>
                       ))}
-                      {deal.health_factors.length === 0 && (
-                        <p className="text-xs text-muted-foreground">No health factors available</p>
-                      )}
                     </CardContent>
                   </Card>
 

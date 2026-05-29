@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format, formatDistanceToNow, isToday, isTomorrow, isPast, differenceInDays } from "date-fns";
-import type { Deal, Task } from "@/types";
+import type { Deal, Task, HealthFactor } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -55,6 +55,58 @@ export function getHealthLabel(score: number): string {
   if (score >= 75) return "Healthy";
   if (score >= 50) return "At Risk";
   return "Critical";
+}
+
+export function computeHealthFactors(deal: Pick<Deal, "closing_date" | "task_count" | "doc_count" | "stage">): { factors: HealthFactor[]; score: number } {
+  const days = differenceInDays(new Date(deal.closing_date), new Date());
+
+  // Days to close (max 25)
+  let daysScore: number;
+  let daysStatus: HealthFactor["status"];
+  let daysDesc: string;
+  if (days > 30) { daysScore = 25; daysStatus = "good"; daysDesc = `${days} days remaining`; }
+  else if (days > 14) { daysScore = 20; daysStatus = "good"; daysDesc = `${days} days remaining`; }
+  else if (days > 7) { daysScore = 14; daysStatus = "warning"; daysDesc = `${days} days remaining`; }
+  else if (days >= 0) { daysScore = 7; daysStatus = "critical"; daysDesc = `${days} days remaining`; }
+  else { daysScore = 3; daysStatus = "critical"; daysDesc = "Past closing date"; }
+
+  // Pending tasks (max 25) — lower task_count = healthier
+  const tasks = deal.task_count ?? 0;
+  let tasksScore: number;
+  let tasksStatus: HealthFactor["status"];
+  let tasksDesc: string;
+  if (tasks === 0) { tasksScore = 25; tasksStatus = "good"; tasksDesc = "No pending tasks"; }
+  else if (tasks <= 2) { tasksScore = 20; tasksStatus = "good"; tasksDesc = `${tasks} task${tasks > 1 ? "s" : ""} pending`; }
+  else if (tasks <= 5) { tasksScore = 14; tasksStatus = "warning"; tasksDesc = `${tasks} tasks pending`; }
+  else { tasksScore = 8; tasksStatus = "critical"; tasksDesc = `${tasks} tasks pending`; }
+
+  // Documents (max 25) — more docs = healthier
+  const docs = deal.doc_count ?? 0;
+  let docsScore: number;
+  let docsStatus: HealthFactor["status"];
+  let docsDesc: string;
+  if (docs >= 8) { docsScore = 25; docsStatus = "good"; docsDesc = "All docs collected"; }
+  else if (docs >= 4) { docsScore = 20; docsStatus = "good"; docsDesc = `${docs} documents uploaded`; }
+  else if (docs >= 1) { docsScore = 12; docsStatus = "warning"; docsDesc = `${docs} doc${docs > 1 ? "s" : ""} uploaded`; }
+  else { docsScore = 5; docsStatus = "critical"; docsDesc = "No documents uploaded"; }
+
+  // Communication / stage progress (max 25)
+  const stageScores: Record<Deal["stage"], number> = {
+    new_lead: 10, under_contract: 15, due_diligence: 18, pending_docs: 20, clear_to_close: 23, closed: 25, cancelled: 5,
+  };
+  const commScore = stageScores[deal.stage] ?? 10;
+  const commStatus: HealthFactor["status"] = commScore >= 20 ? "good" : commScore >= 14 ? "warning" : "critical";
+  const commDesc = commScore >= 23 ? "Clear to close" : commScore >= 20 ? "Good progress" : commScore >= 15 ? "Under contract" : "Early stage";
+
+  const factors: HealthFactor[] = [
+    { label: "Days to close", score: daysScore, max_score: 25, status: daysStatus, description: daysDesc },
+    { label: "Pending tasks", score: tasksScore, max_score: 25, status: tasksStatus, description: tasksDesc },
+    { label: "Documents", score: docsScore, max_score: 25, status: docsStatus, description: docsDesc },
+    { label: "Communication", score: commScore, max_score: 25, status: commStatus, description: commDesc },
+  ];
+
+  const score = factors.reduce((sum, f) => sum + f.score, 0);
+  return { factors, score };
 }
 
 export function getStageLabel(stage: Deal["stage"]): string {
