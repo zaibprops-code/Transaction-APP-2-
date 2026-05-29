@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { FloatingAssistant } from "@/components/ai/floating-assistant";
 import { AINotifications } from "@/components/ai/ai-notifications";
 import { isDemo } from "@/lib/utils";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
   const demo = isDemo();
 
   return (
+    <ThemeProvider>
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
 
@@ -36,5 +38,6 @@ export default function DashboardLayout({
       <FloatingAssistant />
       <AINotifications />
     </div>
+    </ThemeProvider>
   );
 }

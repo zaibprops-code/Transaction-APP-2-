@@ -3,8 +3,60 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    /* CloseTrack Dark Theme — primary */
+  /* ─── Light Theme (default / :root) ─── */
+  :root,
+  [data-theme="light"] {
+    --background: 240 17% 97%;
+    --foreground: 240 19% 7%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 19% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 19% 7%;
+
+    --primary: 239 84% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 234 24% 95%;
+    --secondary-foreground: 240 19% 7%;
+
+    --muted: 234 24% 95%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 239 84% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 60%;
+
+    --surface: 0 0% 100%;
+    --surface-2: 234 24% 95%;
+    --surface-3: 234 20% 92%;
+
+    --success: 158 64% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 37 91% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 217 91% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --radius: 0.625rem;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+  }
+
+  /* ─── Dark Theme ─── */
+  [data-theme="dark"],
+  .dark {
     --background: 224 17% 5%;
     --foreground: 210 40% 98%;
 
@@ -35,6 +87,7 @@
 
     --surface: 224 17% 7%;
     --surface-2: 224 17% 12%;
+    --surface-3: 224 17% 16%;
 
     --success: 158 64% 40%;
     --success-foreground: 210 40% 98%;
@@ -46,36 +99,10 @@
     --info-foreground: 210 40% 98%;
 
     --radius: 0.625rem;
-  }
 
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 224 17% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 17% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 17% 10%;
-    --primary: 239 84% 67%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 224 17% 10%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 263 70% 62%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 239 84% 67%;
-    --surface: 210 40% 98%;
-    --surface-2: 210 40% 96%;
-    --success: 158 64% 40%;
-    --success-foreground: 210 40% 98%;
-    --warning: 37 91% 55%;
-    --warning-foreground: 224 17% 5%;
-    --info: 217 91% 60%;
-    --info-foreground: 210 40% 98%;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4), 0 2px 4px rgba(0,0,0,0.2);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3);
   }
 }
 
@@ -84,18 +111,19 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    transition: background-color 0.2s ease, color 0.15s ease;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
-
   ::selection {
-    background: rgba(99, 102, 241, 0.3);
-    color: #f8fafc;
+    background: rgba(99, 102, 241, 0.25);
+    color: inherit;
   }
 
   ::-webkit-scrollbar {
@@ -119,11 +147,29 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500;
   }
 
   .text-gradient-gold {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-400;
+  }
+
+  /* Dark-mode-only glass effects */
+  [data-theme="dark"] .bg-glass,
+  .dark .bg-glass {
+    background: rgba(17, 19, 24, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Light-mode glass — frosted */
+  [data-theme="light"] .bg-glass,
+  :root .bg-glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   .bg-glass {
@@ -154,6 +200,11 @@
 
   .glow-closetrack {
     box-shadow: 0 0 30px rgba(91, 108, 248, 0.35), 0 0 60px rgba(13, 148, 136, 0.15);
+  }
+
+  /* In light mode, glows become subtle shadows */
+  [data-theme="light"] .glow-closetrack {
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.08));
   }
 
   .border-gradient {
@@ -206,8 +257,32 @@
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
   }
 
+  /* Light mode: replace glow with shadow */
+  [data-theme="light"] .glow-indigo,
+  [data-theme="light"] .glow-violet {
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+  }
+
+  [data-theme="light"] .glow-emerald { box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12); }
+  [data-theme="light"] .glow-amber { box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12); }
+  [data-theme="light"] .glow-red { box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12); }
+
   .card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-glow;
+    @apply transition-all duration-300 hover:-translate-y-1;
+  }
+
+  [data-theme="dark"] .card-hover,
+  .dark .card-hover {
+    @apply hover:shadow-glow;
+  }
+
+  [data-theme="light"] .card-hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  [data-theme="light"] .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
   }
 
   .animate-in {
@@ -224,14 +299,29 @@
   }
 
   .health-high {
-    @apply text-emerald-400 bg-emerald-400/10 border-emerald-400/20;
+    @apply text-emerald-600 bg-emerald-50 border-emerald-200;
   }
 
   .health-medium {
-    @apply text-amber-400 bg-amber-400/10 border-amber-400/20;
+    @apply text-amber-600 bg-amber-50 border-amber-200;
   }
 
   .health-low {
+    @apply text-red-600 bg-red-50 border-red-200;
+  }
+
+  [data-theme="dark"] .health-high,
+  .dark .health-high {
+    @apply text-emerald-400 bg-emerald-400/10 border-emerald-400/20;
+  }
+
+  [data-theme="dark"] .health-medium,
+  .dark .health-medium {
+    @apply text-amber-400 bg-amber-400/10 border-amber-400/20;
+  }
+
+  [data-theme="dark"] .health-low,
+  .dark .health-low {
     @apply text-red-400 bg-red-400/10 border-red-400/20;
   }
 }
