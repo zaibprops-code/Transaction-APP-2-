@@ -3,6 +3,7 @@ import { MOCK_DEALS } from "@/lib/mock-data";
 import { isDemo } from "@/lib/utils";
 import { requireAuth, ok, err } from "@/lib/api-helpers";
 import { getDeal, updateDeal, archiveDeal } from "@/lib/services/deals";
+import { demoStore } from "@/lib/demo-store";
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -10,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
 
   if (isDemo()) {
-    const deal = MOCK_DEALS.find((d) => d.id === id);
+    const deal = MOCK_DEALS.find((d) => d.id === id) ?? demoStore.getDeal(id);
     if (!deal) return err("Deal not found", 404);
     return ok({ deal });
   }
@@ -27,10 +28,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
 
   if (isDemo()) {
-    const deal = MOCK_DEALS.find((d) => d.id === id);
+    const deal = MOCK_DEALS.find((d) => d.id === id) ?? demoStore.getDeal(id);
     if (!deal) return err("Deal not found", 404);
     const body = await request.json() as Record<string, unknown>;
-    return ok({ deal: { ...deal, ...body, updated_at: new Date().toISOString() } });
+    const updated = { ...deal, ...body, updated_at: new Date().toISOString() } as import("@/types").Deal;
+    if (demoStore.getDeal(id)) demoStore.addDeal(updated);
+    return ok({ deal: updated });
   }
 
   const { ctx, error } = await requireAuth();

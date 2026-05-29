@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { MOCK_TASKS, MOCK_DOCUMENTS, MOCK_AI_INSIGHTS, MOCK_ACTIVITIES } from "@/lib/mock-data";
 import { MOCK_CLIENT_PORTAL } from "@/lib/portal-mock-data";
 import { PropertyMediaPanel } from "@/components/media/property-media-panel";
@@ -219,15 +220,42 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
   const [deal, setDeal] = useState<Deal>(initialDeal);
   const [activeTab, setActiveTab] = useState("overview");
   const [portalEnabled, setPortalEnabled] = useState(true);
-  const dealTasks = MOCK_TASKS.filter(t => t.deal_id === deal.id);
-  const dealDocs = MOCK_DOCUMENTS.filter(d => d.deal_id === deal.id);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [dealTasks, setDealTasks] = useState<import("@/types").Task[]>([]);
+  const [dealDocs, setDealDocs] = useState<import("@/types").Document[]>([]);
   const dealInsights = MOCK_AI_INSIGHTS.filter(i => i.deal_id === deal.id);
   const dealActivities = MOCK_ACTIVITIES.filter(a => a.deal_id === deal.id);
   const daysToClose = getDaysToClose(deal.closing_date);
   const healthColor = getHealthColor(deal.health_score);
 
+  useEffect(() => {
+    fetch(`/api/tasks?deal_id=${deal.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { tasks: import("@/types").Task[] } | null) => { if (data) setDealTasks(data.tasks ?? []); })
+      .catch(() => {});
+    fetch(`/api/documents?deal_id=${deal.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { documents: import("@/types").Document[] } | null) => { if (data) setDealDocs(data.documents ?? []); })
+      .catch(() => {});
+  }, [deal.id]);
+
   function handleStageChange(stage: DealStage) {
     setDeal((prev) => ({ ...prev, stage }));
+  }
+
+  async function handleAddTask(title: string, dueDate: string, priority: string) {
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, due_date: dueDate, priority, status: "pending", deal_id: deal.id }),
+    });
+    if (res.ok) {
+      const json = await res.json() as { task: import("@/types").Task };
+      setDealTasks(prev => [...prev, json.task]);
+      toast.success("Task added");
+    } else {
+      toast.error("Failed to add task");
+    }
   }
 
   return (
@@ -443,7 +471,7 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                       <Sparkles className="w-3 h-3 text-violet-400" />
                       Generate with AI
                     </Button>
-                    <Button size="sm" className="gap-1.5 text-xs">
+                    <Button size="sm" className="gap-1.5 text-xs" onClick={() => setShowAddTask(true)}>
                       <Plus className="w-3 h-3" />
                       Add Task
                     </Button>
@@ -676,6 +704,77 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
               </TabsContent>
         </div>
       </Tabs>
+
+      {/* Add Task Dialog */}
+      <AddDealTaskDialog
+        open={showAddTask}
+        onClose={() => setShowAddTask(false)}
+        onSubmit={handleAddTask}
+      />
     </div>
+  );
+}
+
+function AddDealTaskDialog({
+  open,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (title: string, dueDate: string, priority: string) => Promise<void>;
+}) {
+  const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !dueDate) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(title, dueDate, priority);
+      setTitle(""); setDueDate(""); setPriority("medium");
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle className="text-base">Add Task</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Title <span className="text-red-400">*</span></label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Order title search" required className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Due Date <span className="text-red-400">*</span></label>
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Priority</label>
+              <select value={priority} onChange={e => setPriority(e.target.value)} className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={submitting}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={submitting}>
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              {submitting ? "Adding..." : "Add Task"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
