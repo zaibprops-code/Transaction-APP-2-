@@ -27,6 +27,7 @@ import {
   ToggleRight,
   Check,
   Loader2,
+  Upload,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,6 +225,8 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
   const [showAddTask, setShowAddTask] = useState(false);
   const [dealTasks, setDealTasks] = useState<import("@/types").Task[]>([]);
   const [dealDocs, setDealDocs] = useState<import("@/types").Document[]>([]);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
   const dealInsights = MOCK_AI_INSIGHTS.filter(i => i.deal_id === deal.id);
   const dealActivities = MOCK_ACTIVITIES.filter(a => a.deal_id === deal.id);
   const daysToClose = getDaysToClose(deal.closing_date);
@@ -247,6 +250,39 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
 
   function handleStageChange(stage: DealStage) {
     setDeal((prev) => ({ ...prev, stage }));
+  }
+
+  async function handleDocUpload(file: File) {
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("deal_id", deal.id);
+      const res = await fetch("/api/documents/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        throw new Error(json.error ?? "Upload failed");
+      }
+      const newDoc: import("@/types").Document = {
+        id: `doc-${Date.now()}`,
+        deal_id: deal.id,
+        org_id: "org-1",
+        name: file.name,
+        file_path: "",
+        file_size: file.size,
+        mime_type: file.type,
+        category: "other",
+        uploaded_by: "",
+        created_at: new Date().toISOString(),
+      };
+      setDealDocs(prev => [newDoc, ...prev]);
+      toast.success("Document uploaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingDoc(false);
+    }
   }
 
   async function handleAddTask(title: string, dueDate: string, priority: string) {
@@ -532,14 +568,35 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
 
               {/* Documents Tab */}
               <TabsContent value="documents" className="mt-0">
+                <input
+                  ref={docFileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.doc,.png,.jpg,.jpeg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleDocUpload(file);
+                    e.target.value = "";
+                  }}
+                />
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-foreground">Documents ({dealDocs.length})</h3>
-                  <Button size="sm" className="gap-1.5 text-xs">
-                    <Plus className="w-3 h-3" />
-                    Upload
+                  <Button size="sm" className="gap-1.5 text-xs" onClick={() => docFileInputRef.current?.click()} disabled={uploadingDoc}>
+                    {uploadingDoc ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                    {uploadingDoc ? "Uploading..." : "Upload"}
                   </Button>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
+                  {dealDocs.length === 0 && !uploadingDoc && (
+                    <div
+                      className="sm:col-span-2 border-2 border-dashed border-border rounded-xl p-10 text-center cursor-pointer hover:border-indigo-500/40 transition-colors"
+                      onClick={() => docFileInputRef.current?.click()}
+                    >
+                      <Upload className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">Drop files here or <span className="text-indigo-400">browse</span></p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, PNG, JPG supported</p>
+                    </div>
+                  )}
                   {dealDocs.map(doc => (
                     <div key={doc.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all cursor-pointer">
                       <div className="flex items-start gap-3">
