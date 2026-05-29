@@ -164,8 +164,7 @@
   }
 
   /* Light-mode glass — frosted */
-  [data-theme="light"] .bg-glass,
-  :root .bg-glass {
+  [data-theme="light"] .bg-glass {
     background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
