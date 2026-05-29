@@ -1,33 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { MOCK_DOCUMENTS } from "@/lib/mock-data";
+import { isDemo } from "@/lib/utils";
+import { requireAuth, ok, err } from "@/lib/api-helpers";
+import { getDocuments, insertDocumentRecord } from "@/lib/services/documents";
+import type { Document } from "@/types";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const dealId = searchParams.get("deal_id");
-  const category = searchParams.get("category");
+  const dealId = searchParams.get("deal_id") ?? undefined;
+  const category = searchParams.get("category") ?? undefined;
 
-  let docs = MOCK_DOCUMENTS;
-  if (dealId) docs = docs.filter(d => d.deal_id === dealId);
-  if (category) docs = docs.filter(d => d.category === category);
+  if (isDemo()) {
+    let docs = [...MOCK_DOCUMENTS];
+    if (dealId) docs = docs.filter((d) => d.deal_id === dealId);
+    if (category) docs = docs.filter((d) => d.category === category);
+    return ok({ documents: docs, total: docs.length });
+  }
 
-  return NextResponse.json({ documents: docs, total: docs.length });
+  const { ctx, error } = await requireAuth();
+  if (error) return error;
+
+  const { data, error: svcError } = await getDocuments(ctx.supabase, ctx.orgId, dealId);
+  if (svcError) return err(svcError, 500);
+  return ok({ documents: data, total: data?.length ?? 0 });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    return NextResponse.json(
-      {
-        document: {
-          id: `doc-${Date.now()}`,
-          org_id: "org-1",
-          ...body,
-          created_at: new Date().toISOString(),
-        },
+  if (isDemo()) {
+    const body = await request.json() as Record<string, unknown>;
+    return ok({
+      document: {
+        id: `doc-${Date.now()}`,
+        org_id: "org-1",
+        ...body,
+        created_at: new Date().toISOString(),
       },
-      { status: 201 }
-    );
-  } catch {
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    }, 201);
   }
+
+  const { ctx, error } = await requireAuth();
+  if (error) return error;
+
+  const body = await request.json() as {
+    deal_id?: string;
+    client_id?: string;
+    name: string;
+    category: Document["category"];
+    file_path: string;
+    file_size: number;
+    mime_type: string;
+  };
+
+  const { data, error: svcError } = await insertDocumentRecord(
+    ctx.supabase,
+    ctx.orgId,
+    ctx.userId,
+    body
+  );
+  if (svcError) return err(svcError, 400);
+  return ok({ document: data }, 201);
 }
