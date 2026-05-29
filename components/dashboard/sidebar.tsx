@@ -9,6 +9,7 @@ import {
   Building2,
   CheckSquare,
   FolderOpen,
+  Calendar,
   PenLine,
   MessageSquare,
   Users,
@@ -28,6 +29,7 @@ const navSections = [
       { id: "deals", label: "Deals", href: "/deals", icon: Building2 },
       { id: "tasks", label: "Tasks", href: "/tasks", icon: CheckSquare },
       { id: "documents", label: "Documents", href: "/documents", icon: FolderOpen },
+      { id: "calendar", label: "Calendar", href: "/calendar", icon: Calendar },
     ],
   },
   {
