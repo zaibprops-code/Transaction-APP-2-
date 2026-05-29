@@ -71,7 +71,7 @@ export function Pricing() {
             >
               {plan.highlighted && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-strata text-white border-0 px-3 text-xs font-semibold shadow-glow-sm">
+                  <Badge className="bg-gradient-closetrack text-white border-0 px-3 text-xs font-semibold shadow-glow-sm">
                     Most Popular
                   </Badge>
                 </div>

@@ -52,7 +52,7 @@ export default function LoginPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold text-foreground mb-2">Welcome back</h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to your Strata account
+          Sign in to your CloseTrack account
         </p>
       </div>
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
 
         <Button type="submit" className="w-full" size="lg" loading={loading}>
           <Zap className="w-4 h-4" />
-          Sign in to Strata
+          Sign in to CloseTrack
         </Button>
       </form>
 

@@ -63,7 +63,7 @@ export function AINotifications() {
                   }}
                   className="text-[11px] text-indigo-400 hover:text-indigo-300 mt-1 transition-colors"
                 >
-                  Ask Strata AI →
+                  Ask CloseTrack AI →
                 </button>
               </div>
               <button

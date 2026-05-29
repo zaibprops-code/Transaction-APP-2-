@@ -57,15 +57,15 @@ export function FloatingAssistant() {
             aria-label="Toggle AI Assistant"
           >
             {/* Glow ring */}
-            <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
+            <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-600 blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
             {/* Button */}
-            <span className="relative flex items-center gap-2 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-2xl shadow-lg px-4 py-3 font-medium text-sm">
+            <span className="relative flex items-center gap-2 bg-gradient-to-br from-indigo-500 to-teal-600 text-white rounded-2xl shadow-lg px-4 py-3 font-medium text-sm">
               {isOpen ? (
                 <X className="w-4 h-4" />
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">Strata AI</span>
+                  <span className="hidden sm:inline">CloseTrack AI</span>
                   <kbd className="hidden sm:inline text-[10px] bg-white/20 rounded px-1 py-0.5 font-mono">⌘J</kbd>
                 </>
               )}
@@ -156,12 +156,12 @@ function PanelHeader({ onClose, onExpand, onCollapse, mode }: PanelHeaderProps) 
     <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface flex-shrink-0">
       {/* Brand */}
       <div className="flex items-center gap-2 flex-1">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 flex items-center justify-center">
-          <Bot className="w-4 h-4 text-indigo-400" />
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-teal-600 flex items-center justify-center shadow-sm">
+          <Bot className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">Strata AI</p>
-          <p className="text-[10px] text-muted-foreground">Operations Assistant</p>
+          <p className="text-sm font-semibold text-foreground">CloseTrack AI</p>
+          <p className="text-[10px] text-emerald-400/80">● Online — Operations Assistant</p>
         </div>
       </div>
 

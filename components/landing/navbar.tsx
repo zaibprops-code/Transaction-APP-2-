@@ -42,7 +42,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-strata flex items-center justify-center shadow-glow-sm transition-all duration-300 group-hover:shadow-glow">
+              <div className="w-8 h-8 rounded-lg bg-gradient-closetrack flex items-center justify-center shadow-glow-sm transition-all duration-300 group-hover:shadow-glow">
                 <svg
                   width="18"
                   height="18"
@@ -50,11 +50,13 @@ export function Navbar() {
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" fill="white" fillOpacity="0.9" />
-                  <path d="M9 6L12.5 8V12L9 14L5.5 12V8L9 6Z" fill="white" fillOpacity="0.4" />
+                  <line x1="2" y1="5.5" x2="7" y2="5.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.35"/>
+              <line x1="2" y1="9" x2="11" y2="9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.65"/>
+              <line x1="2" y1="12.5" x2="14" y2="12.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="15.8" cy="12.5" r="1.7" fill="white"/>
                 </svg>
               </div>
-              <span className="text-lg font-bold tracking-tight text-white">Strata</span>
+              <span className="text-lg font-bold tracking-tight text-white">CloseTrack</span>
             </Link>
 
             {/* Desktop Nav */}

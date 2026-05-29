@@ -83,7 +83,7 @@ export function AIShowcase() {
             <span className="text-gradient">co-pilot.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Strata&apos;s AI isn&apos;t a chatbot tacked on. It&apos;s embedded in every workflow,
+            CloseTrack&apos;s AI isn&apos;t a chatbot tacked on. It&apos;s embedded in every workflow,
             understanding your deals, your team, and your clients.
           </p>
         </motion.div>
@@ -156,10 +156,10 @@ export function AIShowcase() {
                 className="bg-card border border-indigo-500/20 rounded-xl p-4 bg-gradient-to-br from-indigo-500/5 to-violet-500/5"
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-full bg-gradient-strata flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-gradient-closetrack flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <span className="text-xs font-medium text-indigo-400">Strata AI · {active.title}</span>
+                  <span className="text-xs font-medium text-indigo-400">CloseTrack AI · {active.title}</span>
                 </div>
                 <pre className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed font-sans">
                   {active.preview}
@@ -171,7 +171,7 @@ export function AIShowcase() {
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-surface">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs text-muted-foreground">Strata AI — Live context loaded</span>
+                <span className="text-xs text-muted-foreground">CloseTrack AI — Live context loaded</span>
               </div>
 
               <div className="p-4 space-y-3 max-h-64 overflow-y-auto">

@@ -35,7 +35,7 @@ export function EnterpriseSection() {
             <span className="text-gradient">Scaled for enterprise.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
-            Strata Enterprise offers custom pricing, dedicated support, white-label portals, and
+            CloseTrack Enterprise offers custom pricing, dedicated support, white-label portals, and
             compliance-grade infrastructure for the most demanding real estate organizations.
           </p>
 

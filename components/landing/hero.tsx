@@ -124,10 +124,10 @@ const DashboardMockup = ({ activeTab }: { activeTab: string }) => {
     return (
       <div className="h-full flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-strata flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-gradient-closetrack flex items-center justify-center">
             <Brain className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-semibold">Strata AI</span>
+          <span className="text-sm font-semibold">CloseTrack AI</span>
           <Badge variant="purple" className="text-[10px]">GPT-4o</Badge>
         </div>
         <div className="space-y-3 flex-1 overflow-hidden">
@@ -242,7 +242,8 @@ export function Hero() {
 
       {/* Animated orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-float" />
-      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-violet-500/10 rounded-full blur-3xl animate-float [animation-delay:2s]" />
+      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-teal-500/8 rounded-full blur-3xl animate-float [animation-delay:2s]" />
+      <div className="absolute bottom-1/4 left-1/3 w-64 h-64 bg-emerald-500/6 rounded-full blur-3xl animate-float [animation-delay:4s]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center max-w-4xl mx-auto">
@@ -267,7 +268,7 @@ export function Hero() {
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1] mb-6"
           >
             Close More Deals.{" "}
-            <span className="text-gradient">Coordinate Everything.</span>
+            <span className="text-gradient">Track Every Step.</span>
             {" "}AI Does the Rest.
           </motion.h1>
 
@@ -278,8 +279,7 @@ export function Hero() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            Strata is the AI-native operating system built for transaction coordinators and real estate teams.
-            Automate workflows, manage documents, track every deal — all in one intelligent platform.
+            CloseTrack is the AI-native transaction coordination platform — built to close more deals, track every step, and automate the work your team shouldn't have to do manually.
           </motion.p>
 
           {/* CTAs */}
@@ -388,7 +388,7 @@ export function Hero() {
                 <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
                 <div className="flex-1 mx-4">
                   <div className="bg-surface-2 rounded-md h-5 text-[10px] text-muted-foreground flex items-center px-2 max-w-xs mx-auto">
-                    app.getstrata.io/deals
+                    app.closetrack.co/deals
                   </div>
                 </div>
               </div>

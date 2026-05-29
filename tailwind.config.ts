@@ -122,7 +122,8 @@ const config: Config = {
         "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
         "gradient-mesh":
           "radial-gradient(at 40% 20%, hsla(240,100%,74%,0.15) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(189,100%,56%,0.1) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(355,100%,93%,0.05) 0px, transparent 50%)",
-        "strata-gradient": "linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%)",
+        "closetrack-gradient": "linear-gradient(135deg, #5B6CF8 0%, #0D9488 100%)",
+        "closetrack-gradient-full": "linear-gradient(135deg, #5B6CF8 0%, #3B9EF5 50%, #10B981 100%)",
       },
       boxShadow: {
         glow: "0 0 30px rgba(99,102,241,0.3)",

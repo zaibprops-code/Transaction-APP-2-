@@ -5,7 +5,7 @@ import { Footer } from "@/components/landing/footer";
 import { FAQ } from "@/components/landing/faq";
 
 export const metadata: Metadata = {
-  title: "Pricing — Strata",
+  title: "Pricing — CloseTrack",
   description: "Simple, transparent pricing for teams of all sizes.",
 };
 

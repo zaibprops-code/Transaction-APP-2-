@@ -12,7 +12,7 @@ const testimonials = [
     avatar: "AR",
     rating: 5,
     quote:
-      "Strata completely transformed how I run my TC business. I used to manage everything in spreadsheets and email chains. Now I handle 40% more deals with less stress. The AI assistant is like having a second coordinator on staff.",
+      "CloseTrack completely transformed how I run my TC business. I used to manage everything in spreadsheets and email chains. Now I handle 40% more deals with less stress. The AI assistant is like having a second coordinator on staff.",
     metric: "Handles 40% more deals",
     metricColor: "text-emerald-400",
   },
@@ -23,7 +23,7 @@ const testimonials = [
     avatar: "DW",
     rating: 5,
     quote:
-      "We run a 12-agent brokerage and Strata gave us visibility into every deal we've never had before. The AI risk alerts have saved us from multiple potential liability situations. The enterprise features are exactly what a growing brokerage needs.",
+      "We run a 12-agent brokerage and CloseTrack gave us visibility into every deal we've never had before. The AI risk alerts have saved us from multiple potential liability situations. The enterprise features are exactly what a growing brokerage needs.",
     metric: "Zero missed deadlines in 8 months",
     metricColor: "text-indigo-400",
   },
@@ -34,7 +34,7 @@ const testimonials = [
     avatar: "PN",
     rating: 5,
     quote:
-      "The client portal alone is worth it. Our buyers and sellers love being able to see exactly where their transaction stands at any time. We've seen a 60% reduction in 'where are we?' calls. Strata made our team look extremely professional.",
+      "The client portal alone is worth it. Our buyers and sellers love being able to see exactly where their transaction stands at any time. We've seen a 60% reduction in 'where are we?' calls. CloseTrack made our team look extremely professional.",
     metric: "60% fewer client check-in calls",
     metricColor: "text-violet-400",
   },
@@ -57,7 +57,7 @@ export function Testimonials() {
             <span className="text-gradient">In the business.</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Join 2,400+ transaction coordinators and real estate professionals who trust Strata.
+            Join 2,400+ transaction coordinators and real estate professionals who trust CloseTrack.
           </p>
         </motion.div>
 

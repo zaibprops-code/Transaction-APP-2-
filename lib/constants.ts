@@ -1,6 +1,6 @@
-export const APP_NAME = "Strata";
+export const APP_NAME = "CloseTrack";
 export const APP_TAGLINE = "The AI Operating System for Real Estate Transactions";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://getstrata.io";
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://closetrack.co";
 
 export const DEAL_STAGES = [
   { id: "new_lead", label: "New Lead", color: "blue" },

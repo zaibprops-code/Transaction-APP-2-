@@ -180,7 +180,7 @@ export const draftEmailTool: AITool = {
       deal_id,
       to: recipient_type === "buyer" ? deal?.buyer_email : deal?.seller_email,
       subject: `${purpose} — ${deal?.address}`,
-      body: `Dear ${recipient},\n\nI'm writing regarding your transaction at ${deal?.address}. ${purpose}.\n\nPlease don't hesitate to reach out with any questions.\n\nBest regards,\nStrata Team`,
+      body: `Dear ${recipient},\n\nI'm writing regarding your transaction at ${deal?.address}. ${purpose}.\n\nPlease don't hesitate to reach out with any questions.\n\nBest regards,\nCloseTrack Team`,
       status: "draft",
     };
   },

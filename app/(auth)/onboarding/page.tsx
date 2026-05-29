@@ -62,7 +62,7 @@ export default function OnboardingPage() {
                 step > s.id
                   ? "bg-emerald-500 text-white"
                   : step === s.id
-                  ? "bg-gradient-strata text-white shadow-glow-sm"
+                  ? "bg-gradient-closetrack text-white shadow-glow-sm"
                   : "bg-surface-2 text-muted-foreground border border-border"
               )}
             >
@@ -182,7 +182,7 @@ export default function OnboardingPage() {
           >
             <h2 className="text-2xl font-bold text-foreground mb-2">Set up your workspace</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Give your Strata workspace a name. You can always change this later.
+              Give your CloseTrack workspace a name. You can always change this later.
             </p>
             <div className="space-y-4 mb-8">
               <div className="space-y-2">
@@ -200,7 +200,7 @@ export default function OnboardingPage() {
                   <span className="text-sm font-medium text-indigo-400">AI Setup</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Strata will import sample deals and configure AI workflows based on your role.
+                  CloseTrack will import sample deals and configure AI workflows based on your role.
                   You&apos;ll be up and running in under 2 minutes.
                 </p>
               </div>
@@ -209,7 +209,7 @@ export default function OnboardingPage() {
               <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
               <Button className="flex-1" loading={loading} onClick={handleFinish}>
                 <Sparkles className="w-4 h-4" />
-                Launch Strata
+                Launch CloseTrack
               </Button>
             </div>
           </motion.div>

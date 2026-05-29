@@ -21,18 +21,18 @@ export function CTASection() {
         {/* Glow orb */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-radial from-indigo-500/20 to-transparent blur-3xl" />
-          <div className="relative bg-gradient-to-br from-indigo-500/10 via-violet-500/10 to-background rounded-3xl border border-indigo-500/20 p-12 md:p-16">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-strata flex items-center justify-center mx-auto mb-6 shadow-glow">
+          <div className="relative bg-gradient-to-br from-indigo-500/10 via-teal-500/5 to-emerald-500/8 rounded-3xl border border-indigo-500/20 p-12 md:p-16">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-closetrack flex items-center justify-center mx-auto mb-6 shadow-glow">
               <Zap className="w-7 h-7 text-white" />
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Ready to transform your{" "}
-              <span className="text-gradient">transaction business?</span>
+              Start closing more.{" "}
+              <span className="text-gradient">Track everything.</span>
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Join 2,400+ real estate professionals who close more deals, with less stress,
-              using Strata.
+              Join 2,400+ real estate teams who close more deals, miss fewer deadlines, and
+              spend less time on admin — with CloseTrack.
             </p>
 
             {/* Email capture */}

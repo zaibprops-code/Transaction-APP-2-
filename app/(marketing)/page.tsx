@@ -13,9 +13,9 @@ import { EnterpriseSection } from "@/components/landing/enterprise";
 import { CTASection } from "@/components/landing/cta-section";
 
 export const metadata: Metadata = {
-  title: "Strata — The AI Operating System for Real Estate Transactions",
+  title: "CloseTrack — The AI Operating System for Real Estate Transactions",
   description:
-    "Close more deals. Coordinate everything. AI does the rest. Strata is the AI-native transaction coordination platform built for modern real estate teams.",
+    "Close more deals. Coordinate everything. AI does the rest. CloseTrack is the AI-native transaction coordination platform built for modern real estate teams.",
 };
 
 export default function LandingPage() {

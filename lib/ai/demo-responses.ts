@@ -190,8 +190,8 @@ Please don't hesitate to reach out if you have any questions.
 
 Best regards,
 Sarah Mitchell
-Lead Transaction Coordinator | Strata
-sarah@stratatest.com | (555) 234-5678
+Lead Transaction Coordinator | CloseTrack
+sarah@closetrack.co | (555) 234-5678
 
 ---
 
@@ -269,7 +269,7 @@ Your pipeline is in moderate health. The primary concern is **923 Maple Court** 
 **Post-Closing**
 - [ ] All parties receive executed documents
 - [ ] Commission disbursement processed
-- [ ] File archived in Strata
+- [ ] File archived in CloseTrack
 - [ ] Client follow-up scheduled (30-day check-in)
 
 ---
@@ -435,7 +435,7 @@ I'll email you a daily digest at 7:00 PM with pipeline status, completed actions
   return {
     content: `## 👋 How can I help?
 
-I'm Strata AI, your intelligent operations assistant. I have full visibility into your real estate transaction pipeline.
+I'm CloseTrack AI, your intelligent operations assistant. I have full visibility into your real estate transaction pipeline.
 
 ### 📊 Current Status
 - **${activeDeals.length} active deals** | **$${activeDeals.reduce((s, d) => s + d.purchase_price, 0).toLocaleString()} pipeline value**

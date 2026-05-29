@@ -123,7 +123,7 @@ export function Features() {
             <span className="text-gradient">Nothing you don&apos;t.</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Strata replaces your email chains, spreadsheets, and disconnected tools with one
+            CloseTrack replaces your email chains, spreadsheets, and disconnected tools with one
             intelligent platform built for real estate operations.
           </p>
         </motion.div>

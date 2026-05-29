@@ -46,7 +46,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Email</label>
-                <Input defaultValue="sarah@stratatest.com" type="email" />
+                <Input defaultValue="sarah@closetrack.co" type="email" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Phone</label>

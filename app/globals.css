@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Strata Dark Theme — primary */
+    /* CloseTrack Dark Theme — primary */
     --background: 224 17% 5%;
     --foreground: 210 40% 98%;
 
@@ -140,8 +140,20 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .bg-gradient-strata {
-    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%);
+  /* CloseTrack signature gradient: Indigo → Emerald (start to close) */
+  .bg-gradient-closetrack {
+    background: linear-gradient(135deg, #5B6CF8 0%, #0D9488 100%);
+  }
+
+  .text-gradient-closetrack {
+    background: linear-gradient(135deg, #5B6CF8 0%, #10B981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-closetrack {
+    box-shadow: 0 0 30px rgba(91, 108, 248, 0.35), 0 0 60px rgba(13, 148, 136, 0.15);
   }
 
   .border-gradient {

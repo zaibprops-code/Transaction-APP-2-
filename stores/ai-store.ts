@@ -85,7 +85,7 @@ export const useAIStore = create<AIStore>()(
       clearHistory: () => set({ messages: [] }),
     }),
     {
-      name: "strata-ai-store",
+      name: "closetrack-ai-store",
       partialize: (s) => ({ messages: s.messages.slice(-50), mode: s.mode }),
     }
   )

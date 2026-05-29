@@ -279,7 +279,7 @@ export function AIAssistant() {
     : pathname === "/deals" ? "Deals Pipeline"
     : pathname === "/tasks" ? "Task Manager"
     : pathname === "/documents" ? "Document Center"
-    : "Strata";
+    : "CloseTrack";
 
   return (
     <div className="flex h-full">
@@ -327,7 +327,7 @@ export function AIAssistant() {
                   <Sparkles className="w-6 h-6 text-indigo-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Strata AI</p>
+                  <p className="text-sm font-semibold text-foreground">CloseTrack AI</p>
                   <p className="text-xs text-muted-foreground mt-1">Your AI Operations Assistant</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto">

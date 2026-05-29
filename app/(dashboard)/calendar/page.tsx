@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CalendarShell } from "@/components/calendar/calendar-shell";
 
 export const metadata: Metadata = {
-  title: "Calendar — Strata",
+  title: "Calendar — CloseTrack",
   description: "Transaction calendar with deal timelines and AI scheduling",
 };
 

@@ -16,10 +16,12 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-gradient-strata flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-closetrack flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" fill="white" fillOpacity="0.9" />
-                  <path d="M9 6L12.5 8V12L9 14L5.5 12V8L9 6Z" fill="white" fillOpacity="0.4" />
+                  <line x1="2" y1="5.5" x2="7" y2="5.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.35"/>
+              <line x1="2" y1="9" x2="11" y2="9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.65"/>
+              <line x1="2" y1="12.5" x2="14" y2="12.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="15.8" cy="12.5" r="1.7" fill="white"/>
                 </svg>
               </div>
               <span className="font-bold text-foreground">{APP_NAME}</span>
@@ -52,7 +54,7 @@ export function Footer() {
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Strata Inc. All rights reserved.
+            © {new Date().getFullYear()} CloseTrack Inc. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>SOC 2 Type II</span>

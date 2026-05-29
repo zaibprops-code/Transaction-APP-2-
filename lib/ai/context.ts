@@ -30,7 +30,7 @@ export function buildContext(pathname: string, dealId?: string): string {
 
   const currentDeal = dealId ? MOCK_DEALS.find((d) => d.id === dealId) : null;
 
-  let ctx = `You are Strata AI, an intelligent AI Operations Assistant for a real estate transaction coordination platform called Strata.
+  let ctx = `You are CloseTrack AI, an intelligent AI Operations Assistant for a real estate transaction coordination platform called CloseTrack.
 
 ## Current Date
 ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}

@@ -1,8 +1,8 @@
-# Strata — The AI Operating System for Real Estate Transactions
+# CloseTrack — The AI Operating System for Real Estate Transactions
 
 > Close more deals. Coordinate everything. AI does the rest.
 
-Strata is a world-class, AI-native SaaS platform for real estate transaction coordinators, agents, and brokerages. Built with Next.js 15, TypeScript, Tailwind CSS, Framer Motion, and Supabase.
+CloseTrack is a world-class, AI-native SaaS platform for real estate transaction coordinators, agents, and brokerages. Built with Next.js 15, TypeScript, Tailwind CSS, Framer Motion, and Supabase.
 
 ---
 
@@ -168,4 +168,4 @@ When `NEXT_PUBLIC_SUPABASE_URL` is not set, the app automatically uses mock data
 
 ## License
 
-MIT © Strata Inc.
+MIT © CloseTrack Inc.

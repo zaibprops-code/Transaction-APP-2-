@@ -81,7 +81,7 @@ export function WorkflowSection() {
             <span className="text-gradient">Fully automated.</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Strata manages the entire transaction lifecycle with intelligent automation at every step.
+            CloseTrack manages the entire transaction lifecycle with intelligent automation at every step.
           </p>
         </motion.div>
 

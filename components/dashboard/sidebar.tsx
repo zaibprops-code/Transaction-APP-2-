@@ -67,14 +67,16 @@ export function Sidebar() {
         )}
       >
         <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-strata flex items-center justify-center shadow-glow-sm flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gradient-closetrack flex items-center justify-center shadow-glow-sm flex-shrink-0">
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-              <path d="M9 2L15.5 6V12L9 16L2.5 12V6L9 2Z" fill="white" fillOpacity="0.9" />
-              <path d="M9 6L12.5 8V12L9 14L5.5 12V8L9 6Z" fill="white" fillOpacity="0.4" />
+              <line x1="2" y1="5.5" x2="7" y2="5.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.35"/>
+              <line x1="2" y1="9" x2="11" y2="9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.65"/>
+              <line x1="2" y1="12.5" x2="14" y2="12.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="15.8" cy="12.5" r="1.7" fill="white"/>
             </svg>
           </div>
           {!collapsed && (
-            <span className="font-bold text-foreground truncate">Strata</span>
+            <span className="font-bold text-foreground truncate">CloseTrack</span>
           )}
         </Link>
         {!collapsed && (
