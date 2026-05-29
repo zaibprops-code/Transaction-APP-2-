@@ -1,6 +1,8 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
+import { FloatingAssistant } from "@/components/ai/floating-assistant";
+import { AINotifications } from "@/components/ai/ai-notifications";
 import { isDemo } from "@/lib/utils";
 
 export default function DashboardLayout({
@@ -29,6 +31,10 @@ export default function DashboardLayout({
       </div>
 
       <MobileNav />
+
+      {/* AI Floating Assistant */}
+      <FloatingAssistant />
+      <AINotifications />
     </div>
   );
 }

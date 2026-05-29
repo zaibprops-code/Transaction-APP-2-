@@ -29,6 +29,7 @@ import {
   getStageColor,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { CopilotBar } from "@/components/ai/copilot-bar";
 import type { Deal } from "@/types";
 
 const PIPELINE_STAGES = [
@@ -166,6 +167,15 @@ export function DealsBoard() {
             New Deal
           </Button>
         </div>
+      </div>
+
+      {/* AI Copilot Bar */}
+      <div className="px-4 pb-2">
+        <CopilotBar
+          message="AI: 3 deals need attention — 923 Maple Court at critical risk (45/100)"
+          prompt="Which deals are at risk and what should I prioritize?"
+          variant="red"
+        />
       </div>
 
       {/* Board View */}

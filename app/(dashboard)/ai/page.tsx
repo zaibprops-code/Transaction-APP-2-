@@ -1,8 +1,12 @@
 import { Metadata } from "next";
-import { AIAssistantContent } from "@/components/ai/ai-assistant";
+import { AIAssistant } from "@/components/ai/ai-assistant";
 
 export const metadata: Metadata = { title: "AI Assistant" };
 
 export default function AIPage() {
-  return <AIAssistantContent />;
+  return (
+    <div className="h-full flex flex-col">
+      <AIAssistant />
+    </div>
+  );
 }

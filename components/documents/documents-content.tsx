@@ -23,6 +23,7 @@ import {
   getDocumentCategoryLabel,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { CopilotBar } from "@/components/ai/copilot-bar";
 
 const CATEGORIES = [
   "All",
@@ -98,6 +99,15 @@ export function DocumentsContent() {
             {cat}
           </button>
         ))}
+      </div>
+
+      {/* AI Copilot Bar */}
+      <div className="px-4 py-2 border-b border-border/50">
+        <CopilotBar
+          message="AI: 2 documents need review — Missing inspection report for 923 Maple Court"
+          prompt="Which deals have missing documents and what's needed?"
+          variant="violet"
+        />
       </div>
 
       {/* Upload Zone */}

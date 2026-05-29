@@ -24,6 +24,7 @@ import {
   getPriorityColor,
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { CopilotBar } from "@/components/ai/copilot-bar";
 import type { Task } from "@/types";
 
 const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -147,6 +148,15 @@ export function TasksContent() {
         </div>
       </div>
 
+      {/* AI Copilot Bar */}
+      <div className="px-4 py-2 border-b border-border/50">
+        <CopilotBar
+          message={`AI: ${overdueTasks.length} overdue task${overdueTasks.length !== 1 ? "s" : ""} — Generate priorities and suggested assignments`}
+          prompt="Show me all overdue tasks and suggest how to prioritize and reassign them"
+          variant="amber"
+        />
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {sections.map(section => (
           section.tasks.length > 0 && (
@@ -176,3 +186,4 @@ export function TasksContent() {
     </div>
   );
 }
+
