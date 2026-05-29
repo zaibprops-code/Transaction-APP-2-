@@ -18,6 +18,7 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DocumentViewerModal } from "@/components/documents/viewers/document-viewer-modal";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import type { Document } from "@/types";
@@ -63,6 +64,7 @@ export function DocumentsContent() {
   const [loading, setLoading] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [viewerDoc, setViewerDoc] = useState<Document | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocuments = useCallback(async () => {
@@ -152,6 +154,13 @@ export function DocumentsContent() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Document viewer modal */}
+      <DocumentViewerModal
+        document={viewerDoc}
+        allDocuments={filtered}
+        onClose={() => setViewerDoc(null)}
+      />
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -299,7 +308,7 @@ export function DocumentsContent() {
             filtered.map(doc => {
               const { Icon, bg, color } = fileIcon(doc.mime_type);
               return (
-                <div key={doc.id} className="bg-card border border-border rounded-xl p-4 hover:border-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer group">
+                <div key={doc.id} onClick={() => setViewerDoc(doc)} className="bg-card border border-border rounded-xl p-4 hover:border-indigo-500/20 hover:-translate-y-0.5 transition-all cursor-pointer group">
                   <div className="flex items-start justify-between mb-3">
                     <div className={cn("w-10 h-12 rounded-lg flex items-center justify-center", bg)}>
                       <Icon className={cn("w-5 h-5", color)} />
@@ -327,7 +336,7 @@ export function DocumentsContent() {
             filtered.map(doc => {
               const { Icon, bg, color } = fileIcon(doc.mime_type);
               return (
-                <div key={doc.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all flex items-center gap-4">
+                <div key={doc.id} onClick={() => setViewerDoc(doc)} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all flex items-center gap-4 cursor-pointer">
                   <div className={cn("w-8 h-10 rounded-lg flex items-center justify-center flex-shrink-0", bg)}>
                     <Icon className={cn("w-4 h-4", color)} />
                   </div>

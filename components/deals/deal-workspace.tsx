@@ -42,6 +42,7 @@ import { PropertyMediaPanel } from "@/components/media/property-media-panel";
 import { PortalInvitePanel } from "@/components/portal/portal-invite-panel";
 import { PortalStatusBadge } from "@/components/portal/portal-status-badge";
 import { ActivityFeed } from "@/components/portal/activity-feed";
+import { DocumentViewerModal } from "@/components/documents/viewers/document-viewer-modal";
 import {
   formatCurrency,
   formatDate,
@@ -226,6 +227,7 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
   const [dealTasks, setDealTasks] = useState<import("@/types").Task[]>([]);
   const [dealDocs, setDealDocs] = useState<import("@/types").Document[]>([]);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [viewerDoc, setViewerDoc] = useState<import("@/types").Document | null>(null);
   const docFileInputRef = useRef<HTMLInputElement>(null);
   const dealInsights = MOCK_AI_INSIGHTS.filter(i => i.deal_id === deal.id);
   const dealActivities = MOCK_ACTIVITIES.filter(a => a.deal_id === deal.id);
@@ -307,6 +309,13 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Document viewer modal */}
+      <DocumentViewerModal
+        document={viewerDoc}
+        allDocuments={dealDocs}
+        onClose={() => setViewerDoc(null)}
+      />
+
       {/* Header */}
       <div className="border-b border-border px-4 py-4 bg-surface/50 flex-shrink-0">
         <div className="flex items-start gap-3 mb-3">
@@ -610,7 +619,7 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
                     const iconBg = isImage ? "bg-emerald-500/10" : isPdf ? "bg-red-500/10" : isDoc ? "bg-blue-500/10" : "bg-muted/20";
                     const iconColor = isImage ? "text-emerald-400" : isPdf ? "text-red-400" : isDoc ? "text-blue-400" : "text-muted-foreground";
                     return (
-                      <div key={doc.id} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all cursor-pointer group">
+                      <div key={doc.id} onClick={() => setViewerDoc(doc)} className="bg-card border border-border rounded-xl p-3.5 hover:border-indigo-500/20 transition-all cursor-pointer group">
                         <div className="flex items-start gap-3">
                           <div className={cn("w-9 h-10 rounded-lg flex items-center justify-center flex-shrink-0", iconBg)}>
                             <FileText className={cn("w-4 h-4", iconColor)} />
