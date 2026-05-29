@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const dealId = formData.get("deal_id") as string | null;
-  const bucket = (formData.get("bucket") as string) ?? "documents";
+  const bucket = (formData.get("bucket") as string) ?? "client-documents";
 
   if (!file) return err("No file provided");
 

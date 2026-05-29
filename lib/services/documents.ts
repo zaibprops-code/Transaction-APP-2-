@@ -94,7 +94,7 @@ export async function insertDocumentRecord(
 export async function getSignedUrl(
   supabase: SupabaseClient,
   filePath: string,
-  bucket = "documents"
+  bucket = "client-documents"
 ): Promise<ServiceResult<string>> {
   const { data, error } = await supabase.storage
     .from(bucket)
