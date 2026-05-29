@@ -21,6 +21,10 @@ import {
   Brain,
   ChevronRight,
   Plus,
+  Globe,
+  ExternalLink,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +33,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MOCK_TASKS, MOCK_DOCUMENTS, MOCK_AI_INSIGHTS, MOCK_ACTIVITIES } from "@/lib/mock-data";
+import { MOCK_CLIENT_PORTAL } from "@/lib/portal-mock-data";
 import { PropertyMediaPanel } from "@/components/media/property-media-panel";
+import { PortalInvitePanel } from "@/components/portal/portal-invite-panel";
+import { PortalStatusBadge } from "@/components/portal/portal-status-badge";
+import { ActivityFeed } from "@/components/portal/activity-feed";
 import {
   formatCurrency,
   formatDate,
@@ -48,6 +56,7 @@ import type { Deal } from "@/types";
 
 export function DealWorkspace({ deal }: { deal: Deal }) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [portalEnabled, setPortalEnabled] = useState(true);
   const dealTasks = MOCK_TASKS.filter(t => t.deal_id === deal.id);
   const dealDocs = MOCK_DOCUMENTS.filter(d => d.deal_id === deal.id);
   const dealInsights = MOCK_AI_INSIGHTS.filter(i => i.deal_id === deal.id);
@@ -75,6 +84,7 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
               )}>
                 {getStageLabel(deal.stage)}
               </span>
+              <PortalStatusBadge status="waiting_for_client" compact />
               <div className={cn(
                 "flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded border",
                 healthColor === "emerald" && "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
@@ -116,6 +126,7 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                 { id: "communications", label: "Messages", icon: null },
                 { id: "signatures", label: "Signatures", icon: null },
                 { id: "ai", label: "AI Analysis", icon: Sparkles },
+                { id: "portal", label: "Client Portal", icon: Globe },
               ].map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -412,6 +423,72 @@ export function DealWorkspace({ deal }: { deal: Deal }) {
                     <Plus className="w-3.5 h-3.5" />
                     Request Signature
                   </Button>
+                </div>
+              </TabsContent>
+
+              {/* Portal Tab */}
+              <TabsContent value="portal" className="mt-0">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Left: Invite panel */}
+                  <div className="space-y-4">
+                    <PortalInvitePanel
+                      clientName={deal.buyer_name}
+                      clientEmail={deal.buyer_email ?? ""}
+                      dealId={deal.id}
+                      dealAddress={deal.address}
+                      status="waiting_for_client"
+                      lastActivity="Last viewed 2 hours ago"
+                      stats={{
+                        unreadMessages: MOCK_CLIENT_PORTAL.unreadMessages,
+                        pendingTasks: MOCK_CLIENT_PORTAL.pendingTasks,
+                        pendingDocs: MOCK_CLIENT_PORTAL.docsTotal - MOCK_CLIENT_PORTAL.docsComplete,
+                      }}
+                    />
+
+                    {/* Portal settings */}
+                    <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground">Portal Settings</h3>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-foreground">Portal Access</p>
+                          <p className="text-xs text-muted-foreground">Allow client to view their portal</p>
+                        </div>
+                        <button onClick={() => setPortalEnabled(!portalEnabled)}>
+                          {portalEnabled
+                            ? <ToggleRight className="w-7 h-7 text-emerald-400" />
+                            : <ToggleLeft className="w-7 h-7 text-muted-foreground" />
+                          }
+                        </button>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                          Welcome message
+                        </label>
+                        <textarea
+                          defaultValue={MOCK_CLIENT_PORTAL.welcomeMessage}
+                          rows={2}
+                          className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" className="text-xs gap-1.5 flex-1">Save</Button>
+                        <a href="/portal/demo-token-2024" target="_blank" rel="noreferrer">
+                          <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                            <ExternalLink className="w-3 h-3" />
+                            Preview
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Activity */}
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-border bg-surface p-4">
+                      <h3 className="text-sm font-semibold text-foreground mb-4">Client Activity</h3>
+                      <ActivityFeed activities={MOCK_CLIENT_PORTAL.activities} limit={5} />
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </div>

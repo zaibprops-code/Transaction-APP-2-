@@ -17,6 +17,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const navSections = [
       { id: "signatures", label: "Signatures", href: "/signatures", icon: PenLine },
       { id: "communications", label: "Messages", href: "/communications", icon: MessageSquare },
       { id: "clients", label: "Clients", href: "/clients", icon: Users },
+      { id: "portals", label: "Client Portals", href: "/clients", icon: Globe, sub: true },
     ],
   },
   {
@@ -100,31 +102,40 @@ export function Sidebar() {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                if (item.sub && collapsed) return null;
                 return (
                   <li key={item.id}>
                     <Link
                       href={item.href}
                       className={cn(
                         "flex items-center gap-3 px-2 py-2 rounded-lg text-sm transition-all duration-150 group",
-                        active
-                          ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                          : "text-muted-foreground hover:text-foreground hover:bg-surface-2",
+                        item.sub
+                          ? "ml-4 py-1.5 text-[13px] text-muted-foreground hover:text-indigo-400 hover:bg-indigo-500/5"
+                          : active
+                            ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-surface-2",
                         collapsed && "justify-center px-2"
                       )}
                       title={collapsed ? item.label : undefined}
                     >
                       <Icon
                         className={cn(
-                          "w-4 h-4 flex-shrink-0",
-                          active ? "text-indigo-400" : "text-muted-foreground group-hover:text-foreground"
+                          "flex-shrink-0",
+                          item.sub ? "w-3.5 h-3.5" : "w-4 h-4",
+                          active && !item.sub ? "text-indigo-400" : "text-muted-foreground group-hover:text-foreground"
                         )}
                       />
                       {!collapsed && (
-                        <span className="truncate font-medium">{item.label}</span>
+                        <span className={cn("truncate", item.sub ? "font-normal" : "font-medium")}>{item.label}</span>
                       )}
                       {!collapsed && item.id === "tasks" && (
                         <span className="ml-auto text-[10px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5 font-bold">
                           2
+                        </span>
+                      )}
+                      {!collapsed && item.id === "portals" && (
+                        <span className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-400 rounded-full px-1.5 py-0.5 font-bold">
+                          5
                         </span>
                       )}
                     </Link>

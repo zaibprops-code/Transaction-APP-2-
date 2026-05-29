@@ -102,7 +102,14 @@ function DealCard({ deal }: { deal: Deal }) {
             <FileText className="w-3 h-3" />
             {deal.doc_count ?? 0}
           </div>
-          <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
+          {/* Portal indicator dot */}
+          <div
+            className="flex items-center gap-1 text-[10px] text-amber-400 ml-auto"
+            title="Client portal: awaiting client"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          </div>
+          <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </motion.div>
     </Link>

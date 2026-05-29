@@ -17,6 +17,7 @@ import {
   Upload,
   CheckCircle,
   Plus,
+  Globe,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -405,6 +406,36 @@ export function DashboardContent() {
                 <ArrowRight className="w-3.5 h-3.5 ml-auto" />
               </Link>
             </Button>
+          </div>
+
+          {/* Client Portals widget */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-indigo-400" />
+                <h2 className="text-sm font-semibold text-foreground">Client Portals</h2>
+              </div>
+              <Link href="/clients" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                Manage <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                {[
+                  { label: "Active portals", value: 5, color: "text-emerald-400", dot: "bg-emerald-400" },
+                  { label: "Awaiting client", value: 3, color: "text-amber-400", dot: "bg-amber-400" },
+                  { label: "Invites pending", value: 2, color: "text-muted-foreground", dot: "bg-muted-foreground/50" },
+                ].map(({ label, value, color, dot }) => (
+                  <div key={label} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${dot}`} />
+                      <span className="text-xs text-muted-foreground">{label}</span>
+                    </div>
+                    <span className={`text-sm font-bold ${color}`}>{value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Recent Activity */}
