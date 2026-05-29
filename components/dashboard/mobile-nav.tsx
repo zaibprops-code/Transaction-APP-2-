@@ -7,7 +7,6 @@ import {
   Building2,
   CheckSquare,
   Calendar,
-  Sparkles,
   BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +16,7 @@ const mobileNavItems = [
   { href: "/deals", icon: Building2, label: "Deals" },
   { href: "/tasks", icon: CheckSquare, label: "Tasks" },
   { href: "/calendar", icon: Calendar, label: "Calendar" },
-  { href: "/ai", icon: Sparkles, label: "AI" },
+  { href: "/analytics", icon: BarChart3, label: "Analytics" },
 ];
 
 export function MobileNav() {

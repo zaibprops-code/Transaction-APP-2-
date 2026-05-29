@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   Bell,
-  Sparkles,
   ChevronDown,
   Settings,
   LogOut,
@@ -51,18 +50,6 @@ export function Header({ title }: { title?: string }) {
 
       {/* Right side */}
       <div className="flex items-center gap-2 ml-auto">
-        {/* AI Quick Action */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
-          asChild
-        >
-          <Link href="/ai">
-            <Sparkles className="w-4 h-4" />
-          </Link>
-        </Button>
-
         {/* Notifications */}
         <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
           <DropdownMenuTrigger asChild>

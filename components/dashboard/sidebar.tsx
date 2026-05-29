@@ -13,7 +13,6 @@ import {
   PenLine,
   MessageSquare,
   Users,
-  Sparkles,
   BarChart3,
   Settings,
   ChevronLeft,
@@ -43,7 +42,6 @@ const navSections = [
   {
     label: "Intelligence",
     items: [
-      { id: "ai", label: "AI Assistant", href: "/ai", icon: Sparkles },
       { id: "analytics", label: "Analytics", href: "/analytics", icon: BarChart3 },
     ],
   },
@@ -127,11 +125,6 @@ export function Sidebar() {
                       {!collapsed && item.id === "tasks" && (
                         <span className="ml-auto text-[10px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5 font-bold">
                           2
-                        </span>
-                      )}
-                      {!collapsed && item.id === "ai" && (
-                        <span className="ml-auto">
-                          <Sparkles className="w-3 h-3 text-violet-400" />
                         </span>
                       )}
                     </Link>
