@@ -56,8 +56,14 @@ interface CreateDealForm {
   zip: string;
   buyer_name: string;
   buyer_email: string;
+  buyer_phone: string;
   seller_name: string;
+  seller_email: string;
+  seller_phone: string;
   purchase_price: string;
+  earnest_money: string;
+  loan_amount: string;
+  contract_date: string;
   closing_date: string;
   property_type: PropertyType;
   stage: DealStage;
@@ -70,8 +76,14 @@ const DEFAULT_FORM: CreateDealForm = {
   zip: "",
   buyer_name: "",
   buyer_email: "",
+  buyer_phone: "",
   seller_name: "",
+  seller_email: "",
+  seller_phone: "",
   purchase_price: "",
+  earnest_money: "",
+  loan_amount: "",
+  contract_date: "",
   closing_date: "",
   property_type: "single_family",
   stage: "new_lead",
@@ -111,8 +123,14 @@ function CreateDealDialog({
           zip: form.zip,
           buyer_name: form.buyer_name,
           buyer_email: form.buyer_email || undefined,
+          buyer_phone: form.buyer_phone || undefined,
           seller_name: form.seller_name,
+          seller_email: form.seller_email || undefined,
+          seller_phone: form.seller_phone || undefined,
           purchase_price: form.purchase_price ? Number(form.purchase_price) : 0,
+          earnest_money: form.earnest_money ? Number(form.earnest_money) : undefined,
+          loan_amount: form.loan_amount ? Number(form.loan_amount) : undefined,
+          contract_date: form.contract_date || undefined,
           closing_date: form.closing_date || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
           property_type: form.property_type,
           stage: form.stage,
@@ -191,7 +209,7 @@ function CreateDealDialog({
           </div>
 
           {/* Buyer */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">
                 Buyer Name <span className="text-red-400">*</span>
@@ -215,21 +233,53 @@ function CreateDealDialog({
                 className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Buyer Phone</label>
+              <input
+                type="tel"
+                value={form.buyer_phone}
+                onChange={(e) => set("buyer_phone", e.target.value)}
+                placeholder="(555) 000-0000"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
 
           {/* Seller */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Seller Name</label>
-            <input
-              type="text"
-              value={form.seller_name}
-              onChange={(e) => set("seller_name", e.target.value)}
-              placeholder="John Smith"
-              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Seller Name</label>
+              <input
+                type="text"
+                value={form.seller_name}
+                onChange={(e) => set("seller_name", e.target.value)}
+                placeholder="John Smith"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Seller Email</label>
+              <input
+                type="email"
+                value={form.seller_email}
+                onChange={(e) => set("seller_email", e.target.value)}
+                placeholder="john@email.com"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Seller Phone</label>
+              <input
+                type="tel"
+                value={form.seller_phone}
+                onChange={(e) => set("seller_phone", e.target.value)}
+                placeholder="(555) 000-0000"
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
 
-          {/* Price + Closing */}
+          {/* Price + Contract Date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Purchase Price</label>
@@ -243,14 +293,51 @@ function CreateDealDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Closing Date</label>
+              <label className="text-xs font-medium text-muted-foreground">Contract Date</label>
               <input
                 type="date"
-                value={form.closing_date}
-                onChange={(e) => set("closing_date", e.target.value)}
+                value={form.contract_date}
+                onChange={(e) => set("contract_date", e.target.value)}
                 className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
+          </div>
+
+          {/* Earnest Money + Loan Amount */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Earnest Money</label>
+              <input
+                type="number"
+                value={form.earnest_money}
+                onChange={(e) => set("earnest_money", e.target.value)}
+                placeholder="5000"
+                min={0}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Loan Amount</label>
+              <input
+                type="number"
+                value={form.loan_amount}
+                onChange={(e) => set("loan_amount", e.target.value)}
+                placeholder="360000"
+                min={0}
+                className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          {/* Closing Date */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Closing Date</label>
+            <input
+              type="date"
+              value={form.closing_date}
+              onChange={(e) => set("closing_date", e.target.value)}
+              className="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
 
           {/* Property Type + Stage */}
