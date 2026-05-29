@@ -20,6 +20,7 @@ import {
   Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLiveCounts } from "@/lib/hooks/useLiveCounts";
 
 const navSections = [
   {
@@ -52,6 +53,7 @@ const navSections = [
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { overdueTasks, activePortals } = useLiveCounts();
 
   return (
     <motion.aside
@@ -128,14 +130,14 @@ export function Sidebar() {
                       {!collapsed && (
                         <span className={cn("truncate", item.sub ? "font-normal" : "font-medium")}>{item.label}</span>
                       )}
-                      {!collapsed && item.id === "tasks" && (
+                      {!collapsed && item.id === "tasks" && overdueTasks > 0 && (
                         <span className="ml-auto text-[10px] bg-red-500/20 text-red-400 rounded-full px-1.5 py-0.5 font-bold">
-                          2
+                          {overdueTasks}
                         </span>
                       )}
-                      {!collapsed && item.id === "portals" && (
+                      {!collapsed && item.id === "portals" && activePortals > 0 && (
                         <span className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-400 rounded-full px-1.5 py-0.5 font-bold">
-                          5
+                          {activePortals}
                         </span>
                       )}
                     </Link>

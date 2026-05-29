@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -11,12 +11,12 @@ import {
   Filter,
   Calendar,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MOCK_TASKS } from "@/lib/mock-data";
 import {
   formatDate,
   isOverdue,
@@ -95,8 +95,26 @@ function TaskRow({ task }: { task: Task }) {
 
 export function TasksContent() {
   const [search, setSearch] = useState("");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const allTasks = MOCK_TASKS.filter(
+  const fetchTasks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tasks");
+      if (res.ok) {
+        const json = await res.json() as { tasks: Task[] };
+        setTasks(json.tasks ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const allTasks = tasks.filter(
     t => !search || t.title.toLowerCase().includes(search.toLowerCase()) ||
       t.deal_address?.toLowerCase().includes(search.toLowerCase())
   );
@@ -127,7 +145,7 @@ export function TasksContent() {
         <div className="flex items-center gap-2">
           <CheckSquare className="w-4 h-4 text-muted-foreground" />
           <h1 className="text-base font-semibold text-foreground">Tasks</h1>
-          <Badge variant="secondary">{MOCK_TASKS.filter(t => t.status !== "completed").length} active</Badge>
+          <Badge variant="secondary">{tasks.filter(t => t.status !== "completed").length} active</Badge>
         </div>
         <div className="flex items-center gap-2 ml-auto flex-wrap">
           <Input
@@ -158,29 +176,46 @@ export function TasksContent() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
-        {sections.map(section => (
-          section.tasks.length > 0 && (
-            <div key={section.label}>
-              <div className="flex items-center gap-2 mb-3">
-                <h2 className={cn("text-xs font-semibold uppercase tracking-wide", section.color)}>
-                  {section.label}
-                </h2>
-                <Badge variant="secondary" className="text-[10px]">{section.tasks.length}</Badge>
-              </div>
-              <div className="space-y-2">
-                {section.tasks.map(task => (
-                  <TaskRow key={task.id} task={task} />
-                ))}
-              </div>
-            </div>
-          )
-        ))}
-
-        {allTasks.length === 0 && (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : tasks.length === 0 && !search ? (
           <div className="text-center py-20">
             <CheckSquare className="w-10 h-10 mx-auto mb-4 text-muted-foreground/30" />
-            <p className="text-muted-foreground">No tasks found</p>
+            <p className="text-base font-semibold text-foreground mb-1">No tasks yet</p>
+            <p className="text-sm text-muted-foreground mb-4">Add tasks to track what needs to get done across your deals.</p>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              Add your first task
+            </Button>
           </div>
+        ) : (
+          <>
+            {sections.map(section => (
+              section.tasks.length > 0 && (
+                <div key={section.label}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h2 className={cn("text-xs font-semibold uppercase tracking-wide", section.color)}>
+                      {section.label}
+                    </h2>
+                    <Badge variant="secondary" className="text-[10px]">{section.tasks.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {section.tasks.map(task => (
+                      <TaskRow key={task.id} task={task} />
+                    ))}
+                  </div>
+                </div>
+              )
+            ))}
+            {allTasks.length === 0 && search && (
+              <div className="text-center py-20">
+                <CheckSquare className="w-10 h-10 mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-muted-foreground">No tasks match &quot;{search}&quot;</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

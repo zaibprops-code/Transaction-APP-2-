@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { MOCK_DEALS } from "@/lib/mock-data";
+import { useRealtimeDeals } from "@/lib/hooks/useRealtimeDeals";
 import {
   formatCurrency,
   formatDate,
@@ -30,6 +30,7 @@ import {
 } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CopilotBar } from "@/components/ai/copilot-bar";
+import { PackageOpen, Loader2 } from "lucide-react";
 import type { Deal } from "@/types";
 
 const PIPELINE_STAGES = [
@@ -119,8 +120,8 @@ function DealCard({ deal }: { deal: Deal }) {
 export function DealsBoard() {
   const [view, setView] = useState<"board" | "list">("board");
   const [search, setSearch] = useState("");
+  const { deals: activeDeals, loading } = useRealtimeDeals({ status: "active" });
 
-  const activeDeals = MOCK_DEALS.filter(d => d.status === "active");
   const filtered = activeDeals.filter(d =>
     !search ||
     d.address.toLowerCase().includes(search.toLowerCase()) ||
@@ -185,8 +186,29 @@ export function DealsBoard() {
         />
       </div>
 
+      {/* Loading / Empty state */}
+      {loading && (
+        <div className="flex items-center justify-center flex-1">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!loading && activeDeals.length === 0 && (
+        <div className="flex flex-col items-center justify-center flex-1 py-20 px-4 text-center">
+          <PackageOpen className="w-12 h-12 text-muted-foreground/30 mb-4" />
+          <h3 className="text-base font-semibold text-foreground mb-1">No deals yet</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+            Create your first deal to start tracking transactions in your pipeline.
+          </p>
+          <Button size="sm" className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" />
+            Create your first deal
+          </Button>
+        </div>
+      )}
+
       {/* Board View */}
-      {view === "board" && (
+      {!loading && activeDeals.length > 0 && view === "board" && (
         <div className="flex-1 overflow-x-auto p-4">
           <div className="flex gap-4 min-w-max h-full">
             {PIPELINE_STAGES.map((stage) => {
@@ -229,7 +251,7 @@ export function DealsBoard() {
       )}
 
       {/* List View */}
-      {view === "list" && (
+      {!loading && activeDeals.length > 0 && view === "list" && (
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
             {filtered.map((deal) => {
