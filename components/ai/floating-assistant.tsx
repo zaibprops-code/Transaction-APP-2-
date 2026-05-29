@@ -7,21 +7,28 @@ import {
   Sparkles,
   X,
   Maximize2,
-  Minimize2,
   PanelRightOpen,
   Bot,
 } from "lucide-react";
 import { useAIStore } from "@/stores/ai-store";
 import { AIAssistant } from "@/components/ai/ai-assistant";
 
+// FAB only renders on the main dashboard — all other pages access AI via ⌘J
+const DASHBOARD_PATHS = ["/dashboard"];
+
 export function FloatingAssistant() {
   const pathname = usePathname();
   const { isOpen, mode, openAssistant, closeAssistant, setMode, setContext } = useAIStore();
+
+  const isDashboard = DASHBOARD_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  );
 
   useEffect(() => {
     setContext({ pathname });
   }, [pathname, setContext]);
 
+  // ⌘J still works on every page even without the FAB visible
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const isMeta = e.metaKey || e.ctrlKey;
@@ -38,50 +45,92 @@ export function FloatingAssistant() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const isPanelOrFull = isOpen && (mode === "panel" || mode === "fullscreen");
+  const showFAB = isDashboard && (!isOpen || mode === "panel");
 
   return (
     <>
-      {/* Floating button (always visible when not open, or in panel mode) */}
+      {/* ── Premium floating icon — dashboard only ── */}
       <AnimatePresence>
-        {(!isOpen || mode === "panel") && (
-          <motion.button
-            key="fab"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => (isOpen ? closeAssistant() : openAssistant())}
-            className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 group"
-            aria-label="Toggle AI Assistant"
+        {showFAB && (
+          // Outer wrapper handles the gentle continuous float
+          <motion.div
+            key="fab-wrapper"
+            className="fixed bottom-6 right-6 z-50"
+            initial={{ scale: 0, opacity: 0, y: 12 }}
+            animate={{
+              scale: 1,
+              opacity: 1,
+              y: isOpen ? 0 : [0, -5, 0],
+            }}
+            exit={{ scale: 0, opacity: 0, y: 12 }}
+            transition={{
+              scale: { type: "spring", stiffness: 420, damping: 28 },
+              opacity: { duration: 0.25 },
+              y: isOpen
+                ? { duration: 0.2 }
+                : { duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 },
+            }}
           >
-            {/* Glow ring */}
-            <span className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-600 blur-md opacity-60 group-hover:opacity-80 transition-opacity" />
-            {/* Button */}
-            <span className="relative flex items-center gap-2 bg-gradient-to-br from-indigo-500 to-teal-600 text-white rounded-2xl shadow-lg px-4 py-3 font-medium text-sm">
-              {isOpen ? (
-                <X className="w-4 h-4" />
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline">CloseTrack AI</span>
-                  <kbd className="hidden sm:inline text-[10px] bg-white/20 rounded px-1 py-0.5 font-mono">⌘J</kbd>
-                </>
-              )}
-            </span>
-            {/* Pulse ring when closed */}
+            {/* Ambient glow — blurred clone behind the button */}
+            <span
+              className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500 to-teal-500 blur-xl opacity-30 scale-150 transition-all duration-700 group-hover:opacity-60"
+              aria-hidden
+            />
+
+            {/* Slow pulse ring — visible only when closed */}
             {!isOpen && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500" />
-              </span>
+              <motion.span
+                className="absolute inset-0 rounded-full border border-indigo-400/25"
+                animate={{ scale: [1, 1.8, 1.8], opacity: [0.5, 0, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeOut", delay: 2 }}
+                aria-hidden
+              />
             )}
-          </motion.button>
+
+            {/* The button itself */}
+            <motion.button
+              whileHover={{ scale: 1.12 }}
+              whileTap={{ scale: 0.88 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              onClick={() => (isOpen ? closeAssistant() : openAssistant())}
+              aria-label={isOpen ? "Close AI assistant" : "Open AI assistant (⌘J)"}
+              className="relative w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-teal-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:shadow-xl transition-shadow duration-300"
+            >
+              {/* Inner ring for glass depth */}
+              <span className="absolute inset-0.5 rounded-full bg-white/5 border border-white/10" aria-hidden />
+
+              {/* Icon — animates between Sparkles and X */}
+              <AnimatePresence mode="wait">
+                {isOpen ? (
+                  <motion.span
+                    key="close-icon"
+                    initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="relative"
+                  >
+                    <X className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="ai-icon"
+                    initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="relative"
+                  >
+                    <Sparkles className="w-5 h-5 text-white" strokeWidth={1.8} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Panel mode */}
+      {/* ── AI Panel (slides in from right) ── */}
       <AnimatePresence>
         {isOpen && mode === "panel" && (
           <motion.div
@@ -104,15 +153,15 @@ export function FloatingAssistant() {
         )}
       </AnimatePresence>
 
-      {/* Fullscreen mode */}
+      {/* ── AI Fullscreen ── */}
       <AnimatePresence>
         {isOpen && mode === "fullscreen" && (
           <motion.div
             key="fullscreen"
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            exit={{ opacity: 0, scale: 0.99 }}
+            transition={{ duration: 0.18 }}
             className="fixed inset-0 z-50 flex flex-col bg-background"
           >
             <PanelHeader
@@ -127,22 +176,24 @@ export function FloatingAssistant() {
         )}
       </AnimatePresence>
 
-      {/* Backdrop for panel on mobile */}
+      {/* ── Mobile backdrop when panel open ── */}
       <AnimatePresence>
-        {isPanelOrFull && mode === "panel" && (
+        {isOpen && mode === "panel" && (
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeAssistant}
-            className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm sm:hidden"
+            className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm sm:hidden"
           />
         )}
       </AnimatePresence>
     </>
   );
 }
+
+/* ─── Panel / Fullscreen header ─────────────────────────────────────── */
 
 interface PanelHeaderProps {
   onClose: () => void;
@@ -153,27 +204,30 @@ interface PanelHeaderProps {
 
 function PanelHeader({ onClose, onExpand, onCollapse, mode }: PanelHeaderProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface flex-shrink-0">
-      {/* Brand */}
-      <div className="flex items-center gap-2 flex-1">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-teal-600 flex items-center justify-center shadow-sm">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-sm flex-shrink-0">
+      {/* Brand mark */}
+      <div className="flex items-center gap-2.5 flex-1">
+        <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-teal-600 flex items-center justify-center shadow-sm flex-shrink-0">
           <Bot className="w-4 h-4 text-white" />
+          {/* Live indicator */}
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-background" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">CloseTrack AI</p>
-          <p className="text-[10px] text-emerald-400/80">● Online — Operations Assistant</p>
+          <p className="text-sm font-semibold text-foreground leading-tight">CloseTrack AI</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">Operations Intelligence</p>
         </div>
       </div>
 
-      {/* Mode controls */}
-      <div className="flex items-center gap-1">
+      {/* Controls */}
+      <div className="flex items-center gap-0.5">
         {mode === "panel" && onExpand && (
           <button
             onClick={onExpand}
             className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
-            aria-label="Expand to fullscreen"
+            aria-label="Expand"
+            title="Expand to fullscreen"
           >
-            <Maximize2 className="w-4 h-4" />
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
         )}
         {mode === "fullscreen" && onCollapse && (
@@ -181,25 +235,17 @@ function PanelHeader({ onClose, onExpand, onCollapse, mode }: PanelHeaderProps) 
             onClick={onCollapse}
             className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
             aria-label="Collapse to panel"
+            title="Collapse to panel"
           >
-            <PanelRightOpen className="w-4 h-4" />
-          </button>
-        )}
-        {mode === "fullscreen" && (
-          <button
-            onClick={onCollapse}
-            className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
-            aria-label="Minimize"
-          >
-            <Minimize2 className="w-4 h-4" />
+            <PanelRightOpen className="w-3.5 h-3.5" />
           </button>
         )}
         <button
           onClick={onClose}
           className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
-          aria-label="Close AI assistant"
+          aria-label="Close"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
