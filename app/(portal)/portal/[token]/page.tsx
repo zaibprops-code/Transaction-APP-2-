@@ -11,11 +11,12 @@ import {
   Building2,
   Calendar,
   DollarSign,
-  Users,
   TrendingUp,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { MOCK_CLIENT_PORTAL } from "@/lib/portal-mock-data";
+import { usePortalData } from "@/lib/hooks/usePortalData";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { MilestoneStepper } from "@/components/portal/milestone-stepper";
 import { ClosingCountdown } from "@/components/portal/closing-countdown";
@@ -28,11 +29,48 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
+function PortalSkeleton() {
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8 animate-pulse">
+      <div className="rounded-2xl bg-surface border border-border h-40" />
+      <div className="rounded-2xl bg-surface border border-border h-32" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-2xl bg-surface border border-border h-64" />
+        <div className="rounded-2xl bg-surface border border-border h-64" />
+      </div>
+    </div>
+  );
+}
+
 export default function PortalDashboard({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const portal = MOCK_CLIENT_PORTAL;
+  const { portal, loading, error } = usePortalData(token);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="h-16 bg-surface border-b border-border" />
+        <PortalSkeleton />
+      </div>
+    );
+  }
+
+  if (error || !portal) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
+        <AlertCircle className="w-10 h-10 text-red-400" />
+        <h1 className="text-xl font-semibold text-foreground">Portal Unavailable</h1>
+        <p className="text-muted-foreground text-center max-w-sm">
+          {error ?? "This portal link is invalid or has expired. Contact your agent for a new link."}
+        </p>
+      </div>
+    );
+  }
+
   const daysToClose = differenceInDays(parseISO(portal.closingDate), new Date());
-  const urgentTasks = portal.tasks.filter((t) => t.status === "pending" || t.status === "overdue").slice(0, 3);
+  const urgentTasks = portal.tasks
+    .filter((t) => t.status === "pending" || t.status === "overdue")
+    .slice(0, 3);
   const completedMilestones = portal.milestones.filter((m) => m.status === "completed").length;
 
   return (
@@ -53,7 +91,6 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
           transition={{ duration: 0.5 }}
           className="relative rounded-2xl bg-gradient-to-br from-indigo-500/10 via-teal-500/5 to-background border border-indigo-500/20 overflow-hidden p-6 sm:p-8"
         >
-          {/* Background glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
@@ -64,7 +101,6 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
               </h1>
               <p className="text-muted-foreground mt-2 leading-relaxed">{portal.welcomeMessage}</p>
 
-              {/* Quick stats */}
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="w-4 h-4 text-amber-400" />
@@ -76,7 +112,9 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-indigo-400" />
                   <span className="text-sm">
-                    <span className="font-semibold text-foreground">{portal.docsComplete}/{portal.docsTotal}</span>
+                    <span className="font-semibold text-foreground">
+                      {portal.docsComplete}/{portal.docsTotal}
+                    </span>
                     <span className="text-muted-foreground ml-1">docs complete</span>
                   </span>
                 </div>
@@ -90,7 +128,6 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
               </div>
             </div>
 
-            {/* Countdown */}
             <div className="flex-shrink-0">
               <ClosingCountdown closingDate={portal.closingDate} size="md" />
             </div>
@@ -112,7 +149,11 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
               </p>
             </div>
             <Link href={`/portal/${token}/timeline`}>
-              <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-indigo-400 hover:text-indigo-300">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs gap-1.5 text-indigo-400 hover:text-indigo-300"
+              >
                 Full timeline
                 <ArrowRight className="w-3 h-3" />
               </Button>
@@ -129,7 +170,7 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
               <h2 className="text-base font-semibold text-foreground">Action Required</h2>
               {urgentTasks.length > 0 && (
                 <Badge className="bg-red-500/15 text-red-400 border-red-500/25 text-[10px]">
-                  {urgentTasks.filter(t => t.status === "overdue").length} overdue
+                  {urgentTasks.filter((t) => t.status === "overdue").length} overdue
                 </Badge>
               )}
             </div>
@@ -143,11 +184,17 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
               <div className="rounded-xl border border-border bg-surface p-8 text-center">
                 <CheckSquare className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
                 <p className="text-sm font-medium text-foreground">All caught up!</p>
-                <p className="text-xs text-muted-foreground mt-1">No pending actions at this time.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  No pending actions at this time.
+                </p>
               </div>
             )}
             <Link href={`/portal/${token}/tasks`} className="block mt-3">
-              <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-muted-foreground w-full justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs gap-1.5 text-muted-foreground w-full justify-center"
+              >
                 View all tasks <ArrowRight className="w-3 h-3" />
               </Button>
             </Link>
@@ -167,32 +214,64 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
                 <Building2 className="w-5 h-5 text-indigo-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground leading-snug">{portal.propertyAddress}</p>
+                <p className="text-sm font-semibold text-foreground leading-snug">
+                  {portal.propertyAddress}
+                </p>
                 <p className="text-xs text-muted-foreground">{portal.propertyCity}</p>
-                <Badge variant="secondary" className="mt-1.5 text-[10px]">{portal.propertyType}</Badge>
+                {portal.propertyType && (
+                  <Badge variant="secondary" className="mt-1.5 text-[10px]">
+                    {portal.propertyType}
+                  </Badge>
+                )}
               </div>
             </div>
 
             <div className="space-y-3 pt-2 border-t border-border">
-              {[
-                { icon: DollarSign, label: "Purchase Price", value: formatCurrency(portal.purchasePrice) },
-                { icon: Calendar, label: "Closing Date", value: format(parseISO(portal.closingDate), "MMM d, yyyy") },
-                { icon: Calendar, label: "Contract Date", value: format(parseISO(portal.contractDate), "MMM d, yyyy") },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-center justify-between">
+              {portal.purchasePrice > 0 && (
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
+                    <DollarSign className="w-3.5 h-3.5" />
+                    Purchase Price
                   </div>
-                  <span className="text-xs font-semibold text-foreground">{value}</span>
+                  <span className="text-xs font-semibold text-foreground">
+                    {formatCurrency(portal.purchasePrice)}
+                  </span>
                 </div>
-              ))}
+              )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Closing Date
+                </div>
+                <span className="text-xs font-semibold text-foreground">
+                  {format(parseISO(portal.closingDate), "MMM d, yyyy")}
+                </span>
+              </div>
+              {portal.contractDate && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Contract Date
+                  </div>
+                  <span className="text-xs font-semibold text-foreground">
+                    {format(parseISO(portal.contractDate), "MMM d, yyyy")}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Transaction Health
                 </div>
-                <span className={`text-xs font-bold ${portal.healthScore >= 75 ? "text-emerald-400" : portal.healthScore >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                <span
+                  className={`text-xs font-bold ${
+                    portal.healthScore >= 75
+                      ? "text-emerald-400"
+                      : portal.healthScore >= 50
+                      ? "text-amber-400"
+                      : "text-red-400"
+                  }`}
+                >
                   {portal.healthScore}/100
                 </span>
               </div>
@@ -202,12 +281,18 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
 
         {/* ── Recent activity + Team contacts ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Activity */}
+          {/* Activity feed */}
           <div className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-foreground">Recent Updates</h2>
             </div>
-            <ActivityFeed activities={portal.activities} limit={5} />
+            {portal.activities.length > 0 ? (
+              <ActivityFeed activities={portal.activities} limit={5} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+              </div>
+            )}
           </div>
 
           {/* Team */}
@@ -219,17 +304,29 @@ export default function PortalDashboard({ params }: { params: Promise<{ token: s
                 Available now
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {portal.contacts.slice(0, 6).map((contact, i) => (
-                <TeamContactCard key={contact.id} contact={contact} index={i} />
-              ))}
-            </div>
-            <Link href={`/portal/${token}/messages`} className="block mt-3">
-              <Button variant="ghost" size="sm" className="text-xs gap-1.5 text-indigo-400 hover:text-indigo-300 w-full justify-center">
-                <MessageSquare className="w-3 h-3" />
-                Open Messages
-              </Button>
-            </Link>
+            {portal.contacts.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {portal.contacts.slice(0, 6).map((contact, i) => (
+                    <TeamContactCard key={contact.id} contact={contact} index={i} />
+                  ))}
+                </div>
+                <Link href={`/portal/${token}/messages`} className="block mt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1.5 text-indigo-400 hover:text-indigo-300 w-full justify-center"
+                  >
+                    <MessageSquare className="w-3 h-3" />
+                    Open Messages
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <div className="rounded-xl border border-border bg-surface p-8 text-center">
+                <p className="text-sm text-muted-foreground">Your team will appear here.</p>
+              </div>
+            )}
           </div>
         </div>
       </main>

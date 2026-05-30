@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { MOCK_CLIENT_PORTAL } from "@/lib/portal-mock-data";
+import { usePortalData } from "@/lib/hooks/usePortalData";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { AIHelpWidget } from "@/components/portal/ai-help-widget";
 import { Button } from "@/components/ui/button";
@@ -50,16 +50,22 @@ const INTRO_STEPS = [
 
 export default function WelcomePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const portal = MOCK_CLIENT_PORTAL;
-  const daysToClose = differenceInDays(parseISO(portal.closingDate), new Date());
+  const { portal } = usePortalData(token);
+
+  const daysToClose = portal
+    ? differenceInDays(parseISO(portal.closingDate), new Date())
+    : 0;
+
+  const firstName = portal?.clientName?.split(" ")[0] ?? "there";
+  const address = portal?.propertyAddress ?? "your property";
 
   return (
     <div className="min-h-screen bg-background">
       <PortalNav
         token={token}
-        clientName={portal.clientName}
-        clientInitials={portal.clientInitials}
-        propertyAddress={portal.propertyAddress}
+        clientName={portal?.clientName ?? ""}
+        clientInitials={portal?.clientInitials ?? ""}
+        propertyAddress={portal?.propertyAddress ?? ""}
         daysToClose={daysToClose}
       />
 
@@ -71,7 +77,6 @@ export default function WelcomePage({ params }: { params: Promise<{ token: strin
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          {/* Animated logo mark */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -79,10 +84,36 @@ export default function WelcomePage({ params }: { params: Promise<{ token: strin
             className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/25"
           >
             <svg width="28" height="28" viewBox="0 0 18 18" fill="none">
-              <line x1="2" y1="5.5" x2="7" y2="5.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.4"/>
-              <line x1="2" y1="9" x2="11" y2="9" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeOpacity="0.7"/>
-              <line x1="2" y1="12.5" x2="14" y2="12.5" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
-              <circle cx="15.8" cy="12.5" r="1.7" fill="white"/>
+              <line
+                x1="2"
+                y1="5.5"
+                x2="7"
+                y2="5.5"
+                stroke="white"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeOpacity="0.4"
+              />
+              <line
+                x1="2"
+                y1="9"
+                x2="11"
+                y2="9"
+                stroke="white"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeOpacity="0.7"
+              />
+              <line
+                x1="2"
+                y1="12.5"
+                x2="14"
+                y2="12.5"
+                stroke="white"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <circle cx="15.8" cy="12.5" r="1.7" fill="white" />
             </svg>
           </motion.div>
 
@@ -95,9 +126,9 @@ export default function WelcomePage({ params }: { params: Promise<{ token: strin
             </span>
           </h1>
           <p className="text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-            Hi {portal.clientName.split(" ")[0]}! Your coordinator has set up a secure portal for your purchase of{" "}
-            <span className="text-foreground font-medium">{portal.propertyAddress}</span>.
-            Everything is in one place — no more back-and-forth emails.
+            Hi {firstName}! Your coordinator has set up a secure portal for your purchase of{" "}
+            <span className="text-foreground font-medium">{address}</span>. Everything is in one
+            place — no more back-and-forth emails.
           </p>
         </motion.div>
 
@@ -132,9 +163,12 @@ export default function WelcomePage({ params }: { params: Promise<{ token: strin
         >
           <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-foreground mb-0.5">Your AI transaction assistant is here</p>
+            <p className="text-sm font-medium text-foreground mb-0.5">
+              Your AI transaction assistant is here
+            </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Tap the sparkle button anytime to ask questions — "What happens next?", "What documents do I need?", or anything else about your transaction.
+              Tap the sparkle button anytime to ask questions — "What happens next?", "What
+              documents do I need?", or anything else about your transaction.
             </p>
           </div>
         </motion.div>
