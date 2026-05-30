@@ -101,6 +101,120 @@ export async function sendDealUpdate(
   );
 }
 
+export async function sendSigningInvite(
+  recipientEmail: string,
+  recipientName: string,
+  documentTitle: string,
+  senderName: string,
+  signingToken: string,
+  expiresAt: string
+): Promise<EmailResult> {
+  const signingUrl = `${APP_URL}/sign/${signingToken}`;
+  const expiryDate = new Date(expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return sendEmail(
+    recipientEmail,
+    `Signature Required: ${documentTitle} — CloseTrack`,
+    `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#f9fafb;">
+      <div style="background:white;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+        <div style="margin-bottom:24px;">
+          <span style="background:#6366f1;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">SIGNATURE REQUIRED</span>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hi ${recipientName},</h1>
+        <p style="color:#6b7280;margin:0 0 24px;line-height:1.6;">
+          ${senderName} has requested your signature on <strong style="color:#111827;">${documentTitle}</strong>.
+          Please review and sign at your earliest convenience.
+        </p>
+        <div style="background:#f3f4f6;border-radius:8px;padding:16px;margin-bottom:24px;">
+          <p style="margin:0;color:#374151;font-size:14px;"><strong>Document:</strong> ${documentTitle}</p>
+          <p style="margin:8px 0 0;color:#6b7280;font-size:13px;">Expires: ${expiryDate}</p>
+        </div>
+        <a href="${signingUrl}" style="display:inline-block;background:#6366f1;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+          Review &amp; Sign Document
+        </a>
+        <p style="color:#9ca3af;font-size:12px;margin-top:32px;line-height:1.5;">
+          This signing link is unique to you — do not share it.<br/>
+          Link expires on ${expiryDate}.<br/>
+          © ${new Date().getFullYear()} CloseTrack Inc.
+        </p>
+      </div>
+    </div>
+    `
+  );
+}
+
+export async function sendSigningReminder(
+  recipientEmail: string,
+  recipientName: string,
+  documentTitle: string,
+  senderName: string,
+  signingToken: string,
+  expiresAt: string
+): Promise<EmailResult> {
+  const signingUrl = `${APP_URL}/sign/${signingToken}`;
+  const expiryDate = new Date(expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return sendEmail(
+    recipientEmail,
+    `Reminder: Signature Needed on ${documentTitle} — CloseTrack`,
+    `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#f9fafb;">
+      <div style="background:white;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+        <div style="margin-bottom:24px;">
+          <span style="background:#f59e0b;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">REMINDER</span>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hi ${recipientName},</h1>
+        <p style="color:#6b7280;margin:0 0 24px;line-height:1.6;">
+          This is a friendly reminder that your signature is still needed on
+          <strong style="color:#111827;">${documentTitle}</strong> requested by ${senderName}.
+        </p>
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:24px;">
+          <p style="margin:0;color:#92400e;font-size:14px;">⚠️ Expires on ${expiryDate} — please sign soon.</p>
+        </div>
+        <a href="${signingUrl}" style="display:inline-block;background:#6366f1;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+          Sign Now
+        </a>
+        <p style="color:#9ca3af;font-size:12px;margin-top:32px;">
+          © ${new Date().getFullYear()} CloseTrack Inc.
+        </p>
+      </div>
+    </div>
+    `
+  );
+}
+
+export async function sendSigningComplete(
+  coordinatorEmail: string,
+  coordinatorName: string,
+  documentTitle: string,
+  signerName: string,
+  dealAddress: string
+): Promise<EmailResult> {
+  return sendEmail(
+    coordinatorEmail,
+    `✓ Signed: ${documentTitle} — CloseTrack`,
+    `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#f9fafb;">
+      <div style="background:white;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+        <div style="margin-bottom:24px;">
+          <span style="background:#10b981;color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;">SIGNED</span>
+        </div>
+        <h1 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 8px;">Hi ${coordinatorName},</h1>
+        <p style="color:#6b7280;margin:0 0 24px;line-height:1.6;">
+          <strong style="color:#111827;">${signerName}</strong> has signed
+          <strong style="color:#111827;">${documentTitle}</strong> for ${dealAddress}.
+        </p>
+        <a href="${APP_URL}/signatures" style="display:inline-block;background:#6366f1;color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+          View Signatures
+        </a>
+        <p style="color:#9ca3af;font-size:12px;margin-top:32px;">
+          © ${new Date().getFullYear()} CloseTrack Inc.
+        </p>
+      </div>
+    </div>
+    `
+  );
+}
+
 export async function sendWelcomeEmail(
   userEmail: string,
   userName: string

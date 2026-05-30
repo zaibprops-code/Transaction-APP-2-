@@ -40,7 +40,79 @@ export type DocumentCategory =
   | "addendum"
   | "other";
 
-export type SignatureStatus = "pending" | "sent" | "viewed" | "signed" | "declined" | "expired";
+export type SignatureStatus =
+  | "pending"
+  | "sent"
+  | "viewed"
+  | "partially_signed"
+  | "completed"
+  | "signed"
+  | "declined"
+  | "expired"
+  | "cancelled";
+
+export type SignatureParticipantRole =
+  | "buyer"
+  | "seller"
+  | "agent"
+  | "lender"
+  | "title_officer"
+  | "coordinator"
+  | "external";
+
+export type SignatureFieldType =
+  | "signature"
+  | "initials"
+  | "date"
+  | "text"
+  | "checkbox"
+  | "full_name";
+
+export interface SignatureParticipant {
+  id: string;
+  request_id: string;
+  client_id?: string;
+  name: string;
+  email: string;
+  role: SignatureParticipantRole;
+  signing_order: number;
+  status: SignatureStatus;
+  signing_token?: string;
+  signed_at?: string;
+  viewed_at?: string;
+  reminder_sent_at?: string;
+  ip_address?: string;
+  device_info?: string;
+  signature_data?: string;
+  created_at: string;
+}
+
+export interface SignatureField {
+  id: string;
+  request_id: string;
+  participant_id?: string;
+  page: number;
+  field_type: SignatureFieldType;
+  x_percent: number;
+  y_percent: number;
+  width_percent: number;
+  height_percent: number;
+  required: boolean;
+  value?: string;
+  label?: string;
+  created_at: string;
+}
+
+export interface SignatureAuditLog {
+  id: string;
+  request_id: string;
+  participant_id?: string;
+  action: string;
+  ip_address?: string;
+  device_info?: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
 
 export type CommunicationType = "email" | "sms" | "note" | "call_log";
 
@@ -163,9 +235,15 @@ export interface SignatureRequest {
   org_id: string;
   document_id: string;
   document_name?: string;
+  title: string;
   signers: Signer[];
+  participants?: SignatureParticipant[];
+  fields?: SignatureField[];
+  audit_logs?: SignatureAuditLog[];
   status: SignatureStatus;
   expires_at: string;
+  completed_at?: string;
+  updated_at?: string;
   audit_trail: AuditEntry[];
   created_by: string;
   created_at: string;

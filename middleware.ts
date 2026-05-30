@@ -13,7 +13,9 @@ const PUBLIC_PATHS = [
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
   if (pathname.startsWith("/portal/")) return true;
+  if (pathname.startsWith("/sign/")) return true;
   if (pathname.startsWith("/api/portal/")) return true;
+  if (pathname.startsWith("/api/sign/")) return true;
   if (pathname.startsWith("/api/webhooks")) return true;
   if (pathname.startsWith("/_next/")) return true;
   if (pathname.startsWith("/favicon")) return true;

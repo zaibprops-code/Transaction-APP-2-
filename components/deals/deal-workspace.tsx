@@ -37,6 +37,9 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { MOCK_TASKS, MOCK_DOCUMENTS, MOCK_AI_INSIGHTS, MOCK_ACTIVITIES } from "@/lib/mock-data";
+import { CreateRequestModal } from "@/components/signatures/create-request-modal";
+import { RequestDetailsModal } from "@/components/signatures/request-details-modal";
+import type { SignatureRequest } from "@/types";
 import { MOCK_CLIENT_PORTAL } from "@/lib/portal-mock-data";
 import { PropertyMediaPanel } from "@/components/media/property-media-panel";
 import { PortalInvitePanel } from "@/components/portal/portal-invite-panel";
@@ -705,14 +708,7 @@ export function DealWorkspace({ deal: initialDeal }: { deal: Deal }) {
               </TabsContent>
 
               <TabsContent value="signatures" className="mt-0">
-                <div className="text-center py-16 text-muted-foreground">
-                  <PenLine className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">No signatures yet</p>
-                  <Button className="mt-4" size="sm">
-                    <Plus className="w-3.5 h-3.5" />
-                    Request Signature
-                  </Button>
-                </div>
+                <DealSignaturesTab dealId={deal.id} />
               </TabsContent>
 
               {/* Portal Tab */}
@@ -854,5 +850,128 @@ function AddDealTaskDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DealSignaturesTab({ dealId }: { dealId: string }) {
+  const [requests, setRequests] = useState<SignatureRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<SignatureRequest | null>(null);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/signatures?deal_id=${dealId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRequests(data.requests ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [dealId]);
+
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading…
+      </div>
+    );
+  }
+
+  const signedCount = requests.filter(r => r.status === "completed").length;
+  const pendingCount = requests.filter(r => ["sent", "viewed", "partially_signed", "pending"].includes(r.status)).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <PenLine className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">Signature Requests</span>
+          {pendingCount > 0 && <Badge variant="warning" className="text-[10px]">{pendingCount} pending</Badge>}
+        </div>
+        <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> Request Signature
+        </Button>
+      </div>
+
+      {requests.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-xl">
+          <PenLine className="w-8 h-8 mx-auto mb-3 opacity-30" />
+          <p className="text-sm font-medium">No signature requests for this deal</p>
+          <p className="text-xs opacity-70 mt-1">Create a request to send documents for e-signature</p>
+          <Button size="sm" className="mt-4 gap-1.5" onClick={() => setCreateOpen(true)}>
+            <Plus className="w-3.5 h-3.5" /> Request Signature
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {requests.map(req => {
+            const participants = req.participants ?? req.signers;
+            const sc = participants.filter(p => p.status === "signed").length;
+            const progress = participants.length > 0 ? (sc / participants.length) * 100 : 0;
+            return (
+              <Card
+                key={req.id}
+                className="hover:border-indigo-500/20 transition-all cursor-pointer"
+                onClick={() => setSelectedRequest(req)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{req.title || req.document_name}</p>
+                      <p className="text-xs text-muted-foreground">{sc}/{participants.length} signed</p>
+                    </div>
+                    <Badge
+                      variant={req.status === "completed" ? "success" : req.status === "sent" || req.status === "partially_signed" ? "info" : "warning"}
+                      className="text-[10px] capitalize"
+                    >
+                      {req.status.replace("_", " ")}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1.5 mb-3">
+                    {participants.slice(0, 3).map((p, i) => (
+                      <div key={p.id ?? i} className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${p.status === "signed" ? "bg-emerald-500/20" : "bg-surface-2"}`}>
+                          {p.status === "signed"
+                            ? <CheckCircle className="w-2.5 h-2.5 text-emerald-400" />
+                            : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />}
+                        </div>
+                        <span className="text-xs text-foreground flex-1">{p.name}</span>
+                        <span className={`text-xs ${p.status === "signed" ? "text-emerald-400" : "text-muted-foreground"}`}>
+                          {p.status === "signed" ? "Signed" : "Pending"}
+                        </span>
+                      </div>
+                    ))}
+                    {participants.length > 3 && <p className="text-xs text-muted-foreground ml-6">+{participants.length - 3} more</p>}
+                  </div>
+                  {participants.length > 1 && (
+                    <div className="h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <CreateRequestModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={fetchRequests}
+        dealId={dealId}
+      />
+
+      <RequestDetailsModal
+        request={selectedRequest}
+        open={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        onUpdated={fetchRequests}
+      />
+    </div>
   );
 }
