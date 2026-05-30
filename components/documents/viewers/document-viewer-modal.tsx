@@ -6,9 +6,9 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Download, ExternalLink, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  ChevronLeft, ChevronRight, Loader2, AlertCircle, FileText, FileImage,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Loader2, AlertCircle, FileText, FileImage,
   File, Building2, Copy, CheckCircle, Search, Pen, Highlighter, Type,
-  Square, Circle, Minus, Eraser, Undo2, Redo2, ChevronDown,
+  Square, Circle, Minus, Eraser, Undo2, Redo2, PanelLeft,
   Pin, PinOff, MousePointer2,
 } from "lucide-react";
 import { formatFileSize, getDocumentCategoryLabel } from "@/lib/utils";
@@ -237,6 +237,9 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
   const savedCountRef                   = useRef(0);
   const [showUnsaved, setShowUnsaved]   = useState(false);
 
+  // Sidebar
+  const [sidebarOpen, setSidebarOpen]   = useState(false);
+
   // Auto-hide toolbar
   const [toolbarPinned, setToolbarPinned]   = useState(true);
   const [toolbarVisible, setToolbarVisible] = useState(true);
@@ -248,7 +251,7 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
   const { Icon, bg, tc } = currentDoc ? fileIcon(currentDoc.mime_type) : { Icon: File, bg:"bg-white/5", tc:"text-white/40" };
 
   const annotBarOpen = showAnnotBar && viewerState === "ready";
-  const topPad = toolbarVisible ? (annotBarOpen ? 88 : 44) : 0;
+  const topPad = toolbarVisible ? (annotBarOpen ? 92 : 48) : 0;
 
   // Sync doc index
   useEffect(() => {
@@ -281,7 +284,7 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
       setActiveTool("pointer"); setPdfAnnotations([]); setImgAnnotations([]);
       setPdfHistory([[]]); setImgHistory([[]]); setHistIdx(0);
       setSaveState("saved"); setShowAnnotBar(false); savedCountRef.current = 0;
-      setCurrentPage(1); setNumPages(0);
+      setCurrentPage(1); setNumPages(0); setSidebarOpen(false);
     }
   }, [open]);
 
@@ -347,6 +350,20 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
     setSaveState(ni === savedCountRef.current ? "saved" : "unsaved");
   }, [histIdx, pdfHistory, imgHistory, vType]);
 
+  // Stable callbacks for NativePdfViewer (prevent unnecessary effect re-runs)
+  const handleControlsReady = useCallback((h: NativePdfViewerHandle) => {
+    viewerControls.current = h;
+  }, []);
+  const handleSearchStateChange = useCallback((total: number, current: number) => {
+    setSearchMatchInfo({ total, current });
+  }, []);
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+  const handleNumPagesReady = useCallback((n: number) => {
+    setNumPages(n);
+  }, []);
+
   function handleSaveAnnotations() {
     setSaveState("saving");
     savedCountRef.current = histIdx;
@@ -386,10 +403,17 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
       if ((e.metaKey||e.ctrlKey)&&e.key==="f") { e.preventDefault(); setSearchOpen(s=>!s); }
       if ((e.metaKey||e.ctrlKey)&&e.key==="z") undo();
       if ((e.metaKey||e.ctrlKey)&&e.key==="y") redo();
+      // PDF page navigation
+      if (vType === "pdf" && numPages > 0) {
+        if (e.key === "PageDown") { e.preventDefault(); viewerControls.current?.goToPage(Math.min(currentPage + 1, numPages)); }
+        if (e.key === "PageUp")   { e.preventDefault(); viewerControls.current?.goToPage(Math.max(currentPage - 1, 1)); }
+        if (e.key === "Home")     { e.preventDefault(); viewerControls.current?.goToPage(1); }
+        if (e.key === "End")      { e.preventDefault(); viewerControls.current?.goToPage(numPages); }
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [open, searchOpen, navigate, activeTool, attemptClose, undo, redo]);
+  }, [open, searchOpen, navigate, activeTool, attemptClose, undo, redo, vType, currentPage, numPages]);
 
   useEffect(() => { if (searchOpen) searchInputRef.current?.focus(); }, [searchOpen]);
 
@@ -455,8 +479,19 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                 onMouseLeave={() => { if (!toolbarPinned) scheduleHide(); }}
               >
                 {/* Toolbar */}
-                <div className="flex items-center gap-2 px-3 h-11 border-b border-white/[0.06] bg-[#1c1c24]">
-                  {/* LEFT */}
+                <div className="flex items-center gap-2 px-3 h-12 border-b border-white/[0.06] bg-[#1c1c24]">
+                  {/* LEFT: sidebar toggle + file info */}
+                  {vType === "pdf" && numPages > 0 && (
+                    <button
+                      onClick={() => setSidebarOpen(s => !s)}
+                      className={cn("p-1.5 rounded transition-colors flex-shrink-0",
+                        sidebarOpen ? "bg-indigo-500/20 text-indigo-400" : "text-white/40 hover:text-white/70 hover:bg-white/[0.08]"
+                      )}
+                      title="Toggle page thumbnails"
+                    >
+                      <PanelLeft className="w-4 h-4"/>
+                    </button>
+                  )}
                   <div className={cn("w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0", bg)}>
                     <Icon className={cn("w-3 h-3", tc)}/>
                   </div>
@@ -476,11 +511,11 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                     {docs.length > 1 && (
                       <>
                         <button onClick={()=>navigate(-1)} disabled={currentIdx===0} className="p-1 rounded hover:bg-white/[0.08] disabled:opacity-20 transition-colors">
-                          <ChevronLeft className="w-3.5 h-3.5 text-white/60"/>
+                          <ChevronLeft className="w-4 h-4 text-white/60"/>
                         </button>
                         <span className="text-[10px] text-white/40 px-0.5">{currentIdx+1}/{docs.length}</span>
                         <button onClick={()=>navigate(1)} disabled={currentIdx===docs.length-1} className="p-1 rounded hover:bg-white/[0.08] disabled:opacity-20 transition-colors">
-                          <ChevronRight className="w-3.5 h-3.5 text-white/60"/>
+                          <ChevronRight className="w-4 h-4 text-white/60"/>
                         </button>
                         <div className="w-px h-4 bg-white/10 mx-0.5"/>
                       </>
@@ -489,7 +524,7 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                     {/* Page counter (PDF only) */}
                     {vType === "pdf" && numPages > 0 && (
                       <>
-                        <span className="text-[10px] text-white/40 font-mono">p.{currentPage}/{numPages}</span>
+                        <span className="text-[10px] text-white/45 font-mono whitespace-nowrap">Page {currentPage} of {numPages}</span>
                         <div className="w-px h-4 bg-white/10 mx-0.5"/>
                       </>
                     )}
@@ -498,13 +533,13 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                     {viewerState === "ready" && (
                       <>
                         <button onClick={()=>setZoom(z=>Math.max(z-25,25))} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Zoom out (-)">
-                          <ZoomOut className="w-3.5 h-3.5 text-white/60"/>
+                          <ZoomOut className="w-4 h-4 text-white/60"/>
                         </button>
                         <button onClick={()=>setZoom(100)} className="text-[11px] text-white/50 hover:text-white/80 w-10 text-center transition-colors font-mono" title="Reset zoom">
                           {zoom}%
                         </button>
                         <button onClick={()=>setZoom(z=>Math.min(z+25,300))} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Zoom in (+)">
-                          <ZoomIn className="w-3.5 h-3.5 text-white/60"/>
+                          <ZoomIn className="w-4 h-4 text-white/60"/>
                         </button>
                         <div className="w-px h-4 bg-white/10 mx-0.5"/>
                       </>
@@ -518,7 +553,7 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                             initial={{width:0,opacity:0}} animate={{width:"auto",opacity:1}} exit={{width:0,opacity:0}}
                             className="flex items-center gap-1 bg-white/[0.06] rounded-lg px-2 py-1 border border-white/10 overflow-hidden"
                           >
-                            <Search className="w-3 h-3 text-white/40 flex-shrink-0"/>
+                            <Search className="w-3.5 h-3.5 text-white/40 flex-shrink-0"/>
                             <input ref={searchInputRef} value={searchQ} onChange={e=>setSearchQ(e.target.value)}
                               placeholder="Search document…"
                               className="w-36 bg-transparent text-xs text-white/90 placeholder:text-white/30 outline-none"
@@ -528,26 +563,31 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                               }}
                             />
                             {searchMatchInfo.total > 0 && (
-                              <span className="text-[10px] text-white/40 font-mono flex-shrink-0">
-                                {searchMatchInfo.current+1}/{searchMatchInfo.total}
+                              <span className="text-[10px] text-white/40 font-mono flex-shrink-0 px-0.5">
+                                {searchMatchInfo.current+1} of {searchMatchInfo.total}
                               </span>
                             )}
                             {searchQ && searchMatchInfo.total === 0 && (
                               <span className="text-[10px] text-red-400/70 flex-shrink-0">0 results</span>
                             )}
-                            <button onClick={()=>viewerControls.current?.searchPrev()} className="p-0.5 hover:text-white/60 text-white/30" title="Previous">
-                              <ChevronLeft className="w-3 h-3"/>
-                            </button>
-                            <button onClick={()=>viewerControls.current?.searchNext()} className="p-0.5 hover:text-white/60 text-white/30" title="Next">
-                              <ChevronRight className="w-3 h-3"/>
-                            </button>
-                            <button onClick={()=>{setSearchOpen(false);setSearchQ("");}} className="p-0.5 hover:text-white/60 text-white/30">
+                            {/* Vertical stacked prev/next arrows */}
+                            <div className="flex flex-col gap-px flex-shrink-0">
+                              <button onClick={()=>viewerControls.current?.searchPrev()}
+                                className="p-px hover:text-white/70 text-white/35 hover:bg-white/[0.06] rounded-sm transition-colors" title="Previous match (↑)">
+                                <ChevronUp className="w-3 h-3"/>
+                              </button>
+                              <button onClick={()=>viewerControls.current?.searchNext()}
+                                className="p-px hover:text-white/70 text-white/35 hover:bg-white/[0.06] rounded-sm transition-colors" title="Next match (↓)">
+                                <ChevronDown className="w-3 h-3"/>
+                              </button>
+                            </div>
+                            <button onClick={()=>{setSearchOpen(false);setSearchQ("");}} className="p-0.5 hover:text-white/60 text-white/30 ml-0.5">
                               <X className="w-2.5 h-2.5"/>
                             </button>
                           </motion.div>
                         ) : (
                           <button onClick={()=>setSearchOpen(true)} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Search (Ctrl+F)">
-                            <Search className="w-3.5 h-3.5 text-white/50"/>
+                            <Search className="w-4 h-4 text-white/50"/>
                           </button>
                         )}
                       </AnimatePresence>
@@ -561,33 +601,33 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                     <button onClick={()=>setShowAnnotBar(s=>!s)}
                       className={cn("p-1.5 rounded transition-colors", showAnnotBar?"bg-indigo-500/20 text-indigo-400":"text-white/50 hover:text-white/80 hover:bg-white/[0.08]")}
                       title="Annotations">
-                      <Pen className="w-3.5 h-3.5"/>
+                      <Pen className="w-4 h-4"/>
                     </button>
                     {saveState==="unsaved" && (
                       <button onClick={handleSaveAnnotations} className="px-2 py-1 text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors">Save</button>
                     )}
                     <button onClick={handleDownload} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Download">
-                      <Download className="w-3.5 h-3.5 text-white/50"/>
+                      <Download className="w-4 h-4 text-white/50"/>
                     </button>
                     {signedUrl && (
                       <>
                         <button onClick={handleCopyLink} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Copy link">
-                          {copied ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/> : <Copy className="w-3.5 h-3.5 text-white/50"/>}
+                          {copied ? <CheckCircle className="w-4 h-4 text-emerald-400"/> : <Copy className="w-4 h-4 text-white/50"/>}
                         </button>
                         <a href={signedUrl} target="_blank" rel="noreferrer">
                           <button className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Open in new tab">
-                            <ExternalLink className="w-3.5 h-3.5 text-white/50"/>
+                            <ExternalLink className="w-4 h-4 text-white/50"/>
                           </button>
                         </a>
                       </>
                     )}
                     <button onClick={()=>setFullscreen(f=>!f)} className="p-1.5 rounded hover:bg-white/[0.08] transition-colors" title="Fullscreen">
-                      {fullscreen ? <Minimize2 className="w-3.5 h-3.5 text-white/50"/> : <Maximize2 className="w-3.5 h-3.5 text-white/50"/>}
+                      {fullscreen ? <Minimize2 className="w-4 h-4 text-white/50"/> : <Maximize2 className="w-4 h-4 text-white/50"/>}
                     </button>
                     <button onClick={()=>setToolbarPinned(p=>!p)}
                       className={cn("p-1.5 rounded transition-colors", toolbarPinned?"text-indigo-400/80 hover:bg-white/[0.08]":"text-white/30 hover:text-white/60 hover:bg-white/[0.08]")}
                       title={toolbarPinned?"Unpin toolbar":"Pin toolbar"}>
-                      {toolbarPinned ? <Pin className="w-3.5 h-3.5"/> : <PinOff className="w-3.5 h-3.5"/>}
+                      {toolbarPinned ? <Pin className="w-4 h-4"/> : <PinOff className="w-4 h-4"/>}
                     </button>
                     <button onClick={attemptClose} className="p-1.5 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors ml-0.5" title="Close (Esc)">
                       <X className="w-4 h-4 text-white/60"/>
@@ -704,11 +744,12 @@ export function DocumentViewerModal({ document: doc, allDocuments, onClose }: Do
                           annotSize={annotSize}
                           annotations={pdfAnnotations}
                           searchQuery={searchOpen ? searchQ : ""}
+                          showSidebar={sidebarOpen}
                           onAnnotationAdd={addPdfAnnotation}
-                          onSearchStateChange={(total, current) => setSearchMatchInfo({total,current})}
-                          onPageChange={setCurrentPage}
-                          onNumPagesReady={setNumPages}
-                          onControlsReady={h => { viewerControls.current = h; }}
+                          onSearchStateChange={handleSearchStateChange}
+                          onPageChange={handlePageChange}
+                          onNumPagesReady={handleNumPagesReady}
+                          onControlsReady={handleControlsReady}
                         />
                       )}
 

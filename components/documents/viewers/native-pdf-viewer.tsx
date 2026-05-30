@@ -9,10 +9,10 @@ import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { Loader2, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // ─── Worker ───────────────────────────────────────────────────────────────────
-// Worker copied to /public at install time (see scripts/copy-pdf-worker.sh)
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -65,6 +65,7 @@ export interface NativePdfViewerProps {
   annotSize: number;
   annotations: PageAnnotation[];
   searchQuery: string;
+  showSidebar?: boolean;
   onAnnotationAdd(ann: PageAnnotation): void;
   onSearchStateChange(total: number, current: number): void;
   onPageChange(page: number): void;
@@ -82,7 +83,6 @@ async function buildTextIndex(pdf: PDFDocumentProxy): Promise<PageTextData[]> {
     const { items } = await page.getTextContent();
     const textItems: PageTextItem[] = [];
     for (const raw of items) {
-      // TextItem has `str`; TextMarkedContent does not
       if (!("str" in raw)) continue;
       const item = raw as { str: string; transform: number[]; width: number; height: number };
       if (!item.str.trim()) continue;
@@ -217,10 +217,10 @@ function PageAnnotCanvas({ pageIndex, width, height, tool, color, lineWidth, ann
       const dw = (p.x - sx) * c.width, dh = (p.y - sy) * c.height;
       ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lineWidth; ctx.lineCap = "round";
       if (tool === "highlight") { ctx.globalAlpha = 0.32; ctx.fillRect(sx * c.width, sy * c.height, dw, dh); }
-      else if (tool === "rect")  { ctx.strokeRect(sx * c.width, sy * c.height, dw, dh); }
-      else if (tool === "circle") { ctx.beginPath(); ctx.ellipse(sx * c.width + dw / 2, sy * c.height + dh / 2, Math.abs(dw / 2), Math.abs(dh / 2), 0, 0, Math.PI * 2); ctx.stroke(); }
-      else if (tool === "line")   { ctx.beginPath(); ctx.moveTo(sx * c.width, sy * c.height); ctx.lineTo(p.x * c.width, p.y * c.height); ctx.stroke(); }
-      else if (tool === "eraser") { ctx.clearRect(p.x * c.width - 20, p.y * c.height - 20, 40, 40); }
+      else if (tool === "rect")    { ctx.strokeRect(sx * c.width, sy * c.height, dw, dh); }
+      else if (tool === "circle")  { ctx.beginPath(); ctx.ellipse(sx * c.width + dw / 2, sy * c.height + dh / 2, Math.abs(dw / 2), Math.abs(dh / 2), 0, 0, Math.PI * 2); ctx.stroke(); }
+      else if (tool === "line")    { ctx.beginPath(); ctx.moveTo(sx * c.width, sy * c.height); ctx.lineTo(p.x * c.width, p.y * c.height); ctx.stroke(); }
+      else if (tool === "eraser")  { ctx.clearRect(p.x * c.width - 20, p.y * c.height - 20, 40, 40); }
       ctx.restore();
     }
   }
@@ -251,7 +251,7 @@ function PageAnnotCanvas({ pageIndex, width, height, tool, color, lineWidth, ann
 
 export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewerProps>(
   function NativePdfViewer(
-    { url, zoomPct, activeTool, annotColor, annotSize, annotations, searchQuery,
+    { url, zoomPct, activeTool, annotColor, annotSize, annotations, searchQuery, showSidebar,
       onAnnotationAdd, onSearchStateChange, onPageChange, onNumPagesReady, onControlsReady },
     _ref
   ) {
@@ -261,9 +261,16 @@ export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewer
     const [activeMatch, setActiveMatch]     = useState(0);
     const [pageDims, setPageDims]           = useState<Map<number, { w: number; h: number }>>(new Map());
     const [indexing, setIndexing]           = useState(false);
+    const [internalPage, setInternalPage]   = useState(1);
 
-    const pageEls    = useRef<Map<number, HTMLDivElement | null>>(new Map());
+    // Always-current ref — fixes stale closure in search navigation
+    const searchMatchesRef = useRef<SearchMatch[]>([]);
+    searchMatchesRef.current = searchMatches;
+
+    const pageEls      = useRef<Map<number, HTMLDivElement | null>>(new Map());
     const containerRef = useRef<HTMLDivElement>(null);
+    const sidebarRef   = useRef<HTMLDivElement>(null);
+    const thumbEls     = useRef<Map<number, HTMLButtonElement | null>>(new Map());
     const [containerW, setContainerW] = useState(800);
 
     useEffect(() => {
@@ -274,10 +281,8 @@ export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewer
       return () => ro.disconnect();
     }, []);
 
-    // Page width = container minus padding, scaled by zoom
     const pageWidth = Math.max(200, Math.floor((containerW - 48) * (zoomPct / 100)));
 
-    // On PDF load: set page count + build text index
     const onDocumentLoad = useCallback(async (pdf: PDFDocumentProxy) => {
       setNumPages(pdf.numPages);
       onNumPagesReady(pdf.numPages);
@@ -301,15 +306,15 @@ export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewer
       onSearchStateChange(matches.length, 0);
     }, [searchQuery, textIndex, onSearchStateChange]);
 
-    // Scroll to current match
+    // Scroll to active match — center block for better visibility
     useEffect(() => {
       if (searchMatches.length === 0) return;
       const m = searchMatches[activeMatch]; if (!m) return;
-      pageEls.current.get(m.pageIndex)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      pageEls.current.get(m.pageIndex)?.scrollIntoView({ behavior: "smooth", block: "center" });
       onSearchStateChange(searchMatches.length, activeMatch);
     }, [activeMatch, searchMatches, onSearchStateChange]);
 
-    // Current page tracking
+    // Current page tracking via IntersectionObserver
     useEffect(() => {
       if (!containerRef.current || numPages === 0) return;
       const obs = new IntersectionObserver(
@@ -318,6 +323,7 @@ export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewer
           if (!vis.length) return;
           const best = vis.reduce((a, b) => a.intersectionRatio > b.intersectionRatio ? a : b);
           const idx = parseInt(best.target.getAttribute("data-page-idx") ?? "0", 10);
+          setInternalPage(idx + 1);
           onPageChange(idx + 1);
         },
         { root: containerRef.current, threshold: [0.1, 0.5] }
@@ -326,115 +332,185 @@ export const NativePdfViewer = forwardRef<NativePdfViewerHandle, NativePdfViewer
       return () => obs.disconnect();
     }, [numPages, onPageChange]);
 
-    // Expose controls to parent
+    // Auto-scroll sidebar thumbnail to follow active page
+    useEffect(() => {
+      if (!showSidebar || !sidebarRef.current) return;
+      thumbEls.current.get(internalPage - 1)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, [internalPage, showSidebar]);
+
+    // Expose controls — uses ref so no stale closure on searchMatches.length
     useEffect(() => {
       onControlsReady({
-        searchNext: () => setActiveMatch(i => Math.min(i + 1, searchMatches.length - 1)),
+        searchNext: () => setActiveMatch(i => {
+          const max = searchMatchesRef.current.length - 1;
+          return max < 0 ? 0 : Math.min(i + 1, max);
+        }),
         searchPrev: () => setActiveMatch(i => Math.max(i - 1, 0)),
-        goToPage:   (p: number) => pageEls.current.get(p - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+        goToPage: (p: number) => pageEls.current.get(p - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }),
       });
-    }, [onControlsReady, searchMatches.length]);
+    }, [onControlsReady]);
 
-    // Unused ref (controls passed via onControlsReady instead)
     useImperativeHandle(_ref, () => ({
-      searchNext: () => setActiveMatch(i => Math.min(i + 1, searchMatches.length - 1)),
+      searchNext: () => setActiveMatch(i => {
+        const max = searchMatchesRef.current.length - 1;
+        return max < 0 ? 0 : Math.min(i + 1, max);
+      }),
       searchPrev: () => setActiveMatch(i => Math.max(i - 1, 0)),
-      goToPage:   (p: number) => pageEls.current.get(p - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      goToPage: (p: number) => pageEls.current.get(p - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }),
     }));
 
     return (
-      <div ref={containerRef} className="h-full w-full overflow-y-auto overflow-x-hidden bg-[#0a0a0f] viewer-scroll">
+      <div className="h-full w-full overflow-hidden bg-[#0a0a0f]">
         <Document
           file={url}
           onLoadSuccess={onDocumentLoad}
           loading={
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="h-full w-full flex flex-col items-center justify-center gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-400/70" />
               <p className="text-sm text-white/30">Loading document…</p>
             </div>
           }
           error={
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="h-full w-full flex flex-col items-center justify-center gap-3">
               <AlertCircle className="w-8 h-8 text-red-400/70" />
               <p className="text-sm text-white/60">Failed to load document</p>
             </div>
           }
-          className={cn("flex flex-col items-center py-5 gap-4 min-h-full")}
+          className="flex flex-row h-full w-full"
         >
-          {Array.from({ length: numPages }, (_, i) => {
-            const dims       = pageDims.get(i);
-            const pageAnns   = annotations.filter(a => a.pageIndex === i);
-            const pageMatches = searchMatches.filter(m => m.pageIndex === i);
-            // Global index of first match on this page
-            const matchStart = searchMatches.findIndex(m => m.pageIndex === i);
-
-            return (
-              <div
-                key={i}
-                ref={el => { pageEls.current.set(i, el); }}
-                data-page-idx={i}
-                className="relative flex-shrink-0 shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+          {/* Collapsible thumbnail sidebar */}
+          <AnimatePresence>
+            {showSidebar && numPages > 0 && (
+              <motion.div
+                ref={sidebarRef}
+                key="pdf-sidebar"
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 152, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="h-full overflow-y-auto overflow-x-hidden border-r border-white/[0.06] bg-[#111118] flex-shrink-0"
+                style={{ minWidth: 0 }}
               >
-                <Page
-                  pageNumber={i + 1}
-                  width={pageWidth}
-                  renderTextLayer
-                  renderAnnotationLayer={false}
-                  onLoadSuccess={page => {
-                    setPageDims(prev => {
-                      const n = new Map(prev);
-                      n.set(i, { w: page.width, h: page.height });
-                      return n;
-                    });
-                  }}
-                  className="block select-text"
-                />
-
-                {/* Search highlight overlay */}
-                {pageMatches.length > 0 && (
-                  <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }}>
-                    {pageMatches.map((match, j) => {
-                      const isActive = matchStart + j === activeMatch;
-                      return (
-                        <div
-                          key={match.id}
-                          style={{
-                            position: "absolute",
-                            left:   `${match.rect.x * 100}%`,
-                            top:    `${match.rect.y * 100}%`,
-                            width:  `${match.rect.w * 100}%`,
-                            height: `${match.rect.h * 100}%`,
-                            background: isActive
-                              ? "rgba(251,146,60,0.55)"
-                              : "rgba(253,224,71,0.40)",
-                            borderRadius: "2px",
-                            outline: isActive ? "2px solid rgba(251,146,60,0.8)" : "none",
-                            transition: "background 0.15s",
-                          }}
+                <div className="py-2">
+                  {Array.from({ length: numPages }, (_, i) => (
+                    <button
+                      key={i}
+                      ref={el => { thumbEls.current.set(i, el); }}
+                      onClick={() => pageEls.current.get(i)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                      className={cn(
+                        "w-full px-2 py-2 flex flex-col items-center gap-1.5 transition-colors",
+                        internalPage === i + 1
+                          ? "bg-indigo-500/[0.10]"
+                          : "hover:bg-white/[0.04]"
+                      )}
+                    >
+                      <div className={cn(
+                        "rounded overflow-hidden border transition-all",
+                        internalPage === i + 1
+                          ? "border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.28)]"
+                          : "border-white/[0.08]"
+                      )}>
+                        <Page
+                          pageNumber={i + 1}
+                          width={116}
+                          renderTextLayer={false}
+                          renderAnnotationLayer={false}
                         />
-                      );
-                    })}
-                  </div>
-                )}
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-mono leading-none select-none",
+                        internalPage === i + 1 ? "text-indigo-400" : "text-white/30"
+                      )}>
+                        {i + 1}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Annotation canvas */}
-                {dims && (
-                  <div className="absolute inset-0" style={{ zIndex: 10 }}>
-                    <PageAnnotCanvas
-                      pageIndex={i}
-                      width={dims.w}
-                      height={dims.h}
-                      tool={activeTool}
-                      color={annotColor}
-                      lineWidth={annotSize}
-                      annotations={pageAnns}
-                      onAdd={onAnnotationAdd}
+          {/* Main scroll area */}
+          <div
+            ref={containerRef}
+            className="flex-1 h-full overflow-y-auto overflow-x-hidden viewer-scroll"
+          >
+            <div className="flex flex-col items-center py-5 gap-4 min-h-full">
+              {Array.from({ length: numPages }, (_, i) => {
+                const dims        = pageDims.get(i);
+                const pageAnns    = annotations.filter(a => a.pageIndex === i);
+                const pageMatches = searchMatches.filter(m => m.pageIndex === i);
+                const matchStart  = searchMatches.findIndex(m => m.pageIndex === i);
+
+                return (
+                  <div
+                    key={i}
+                    ref={el => { pageEls.current.set(i, el); }}
+                    data-page-idx={i}
+                    className="relative flex-shrink-0 shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+                  >
+                    <Page
+                      pageNumber={i + 1}
+                      width={pageWidth}
+                      renderTextLayer
+                      renderAnnotationLayer={false}
+                      onLoadSuccess={page => {
+                        setPageDims(prev => {
+                          const n = new Map(prev);
+                          n.set(i, { w: page.width, h: page.height });
+                          return n;
+                        });
+                      }}
+                      className="block select-text"
                     />
+
+                    {/* Search highlight overlay */}
+                    {pageMatches.length > 0 && (
+                      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }}>
+                        {pageMatches.map((match, j) => {
+                          const isActive = matchStart + j === activeMatch;
+                          return (
+                            <div
+                              key={match.id}
+                              style={{
+                                position: "absolute",
+                                left:   `${match.rect.x * 100}%`,
+                                top:    `${match.rect.y * 100}%`,
+                                width:  `${match.rect.w * 100}%`,
+                                height: `${match.rect.h * 100}%`,
+                                background: isActive
+                                  ? "rgba(251,146,60,0.55)"
+                                  : "rgba(253,224,71,0.40)",
+                                borderRadius: "2px",
+                                outline: isActive ? "2px solid rgba(251,146,60,0.8)" : "none",
+                                transition: "background 0.15s",
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Annotation canvas */}
+                    {dims && (
+                      <div className="absolute inset-0" style={{ zIndex: 10 }}>
+                        <PageAnnotCanvas
+                          pageIndex={i}
+                          width={dims.w}
+                          height={dims.h}
+                          tool={activeTool}
+                          color={annotColor}
+                          lineWidth={annotSize}
+                          annotations={pageAnns}
+                          onAdd={onAnnotationAdd}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </Document>
 
         {/* Indexing indicator */}
